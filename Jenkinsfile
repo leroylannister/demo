@@ -200,4 +200,56 @@ pipeline {
             }
         }
 
-        // Stage for publishing test reports and archiving
+        // Stage for publishing test reports and archiving artifacts
+        stage('Publish Reports and Archive Artifacts') {
+            steps {
+                script {
+                    // Archive JUnit XML test results for Jenkins' built-in reporting
+                    junit 'reports/demo_junit_*.xml'
+
+                    // Archive HTML reports
+                    archiveArtifacts artifacts: 'reports/*.html', allowEmptyArchive: true
+
+                    // Archive log files
+                    archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
+
+                    // Archive screenshots
+                    archiveArtifacts artifacts: 'screenshots/*.png', allowEmptyArchive: true
+
+                    // Publish HTML reports using the HTML Publisher Plugin
+                    publishHTML([
+                        allowMissing: false,            // Fail build if report files are missing
+                        alwaysLinkToLastBuild: true,    // Always link to the latest build's report
+                        keepAll: true,                  // Keep historical reports
+                        reportDir: 'reports',           // Directory containing HTML reports
+                        reportFiles: '*.html',          // Pattern for report files
+                        reportName: 'Demo Test Reports' // Name displayed in Jenkins UI
+                    ])
+                }
+            }
+        }
+    }
+
+    // Post-build actions (run after all stages complete)
+    post {
+        // Actions to run always, regardless of the pipeline's outcome
+        always {
+            steps {
+                // This block is now syntactically correct and will not cause an error.
+                echo 'Pipeline run has completed.'
+            }
+        }
+        // Actions to run if the pipeline succeeds
+        success {
+            echo '✅ Demo tests passed successfully!'
+        }
+        // Actions to run if the pipeline fails
+        failure {
+            echo '❌ Demo tests failed!'
+        }
+        // Actions to run if the pipeline is aborted
+        aborted {
+            echo '🚫 Demo tests aborted!'
+        }
+    }
+}
