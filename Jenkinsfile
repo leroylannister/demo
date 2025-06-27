@@ -105,10 +105,10 @@ pipeline {
                     // Define a map of common BrowserStack platform configurations
                     // These keys correspond to the PLATFORM_SET parameter choices
                     def platformConfigs = [
-                        'chrome_windows': [browser: 'Chrome', os: 'Windows', os_version: '10'],
-                        'firefox_mac':    [browser: 'Firefox', os: 'OS X', os_version: 'Sonoma'],
-                        'edge_windows':   [browser: 'Edge', os: 'Windows', os_version: '10'],
-                        'safari_mac':     [browser: 'Safari', os: 'OS X', os_version: 'Sonoma'],
+                        'chrome_windows': [browser: 'chrome', os: 'Windows', os_version: '10'],
+                        'firefox_mac':    [browser: 'firefox', os: 'OS X', os_version: 'Sonoma'],
+                        'edge_windows':   [browser: 'edge', os: 'Windows', os_version: '10'],
+                        'safari_mac':     [browser: 'safari', os: 'OS X', os_version: 'Sonoma'],
                         'samsung_mobile': [device: 'Samsung Galaxy S22', os: 'Android', os_version: '12.0', real_mobile: 'true'],
                         'iphone_mobile':  [device: 'iPhone 15', os: 'iOS', os_version: '17', real_mobile: 'true']
                     ]
@@ -214,7 +214,7 @@ pipeline {
                     archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
 
                     // Archive screenshots
-                    archiveArtifacts artifacts: 'screenshots/*.png', allowEmptyArchive: true
+                    archiveAartifacts artifacts: 'screenshots/*.png', allowEmptyArchive: true
 
                     // Publish HTML reports using the HTML Publisher Plugin
                     publishHTML([
@@ -241,15 +241,21 @@ pipeline {
         }
         // Actions to run if the pipeline succeeds
         success {
-            echo '✅ Demo tests passed successfully!'
+            steps {
+                echo '✅ Demo tests passed successfully!'
+            }
         }
         // Actions to run if the pipeline fails
         failure {
-            echo '❌ Demo tests failed!'
+            steps {
+                echo '❌ Demo tests failed!'
+            }
         }
         // Actions to run if the pipeline is aborted
         aborted {
-            echo '🚫 Demo tests aborted!'
+            steps {
+                echo '🚫 Demo tests aborted!'
+            }
         }
     }
 }
