@@ -7,6 +7,7 @@ from tests.test_base import TestBase
 from src.demo.pages.login_page import LoginPage
 from src.demo.pages.products_page import ProductsPage
 from src.demo.pages.favorites_page import FavoritesPage
+from selenium.webdriver.common.by import By
 
 
 class TestDemoFavoritesFlow(TestBase):
@@ -58,3 +59,14 @@ class TestDemoFavoritesFlow(TestBase):
         
         self.logger.info("[Demo] ✅ Successfully verified Galaxy S20+ in favorites")
         self.take_screenshot("demo_test_success_favorites_added")
+
+    # In your test_favorites_flow.py, temporarily add:
+    def test_debug_page(self, driver):
+        driver.get("https://www.bstackdemo.com")
+        time.sleep(2)  # Give page time to load
+        
+        # Print all links on the page
+        links = driver.find_elements(By.TAG_NAME, "a")
+        print(f"\nFound {len(links)} links on page:")
+        for link in links:
+            print(f"  Text: '{link.text}' | Href: {link.get_attribute('href')}")

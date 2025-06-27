@@ -1,0 +1,22 @@
+[Demo] 18:41:57 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 1: Logging into BStackDemo
+[Demo] 18:41:57 - Demo.LoginPage - INFO - [Demo] Navigating to: https://www.bstackdemo.com
+[Demo] 18:41:59 - Demo.LoginPage - INFO - [Demo] Clicked Sign In link
+[Demo] 18:41:59 - Demo.LoginPage - INFO - [Demo] Selecting username: demouser
+[Demo] 18:41:59 - Demo.LoginPage - INFO - [Demo] Selected demouser
+[Demo] 18:41:59 - Demo.LoginPage - INFO - [Demo] Selecting password
+[Demo] 18:42:00 - Demo.LoginPage - INFO - [Demo] Selected password
+[Demo] 18:42:00 - Demo.LoginPage - INFO - [Demo] Clicked Log In button
+[Demo] 18:42:02 - Demo.LoginPage - INFO - [Demo] Login completed successfully
+[Demo] 18:42:02 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 2: Filtering products by Samsung
+[Demo] 18:42:02 - Demo.ProductsPage - INFO - [Demo] Filtering products by Samsung
+[Demo] 18:42:04 - Demo.ProductsPage - INFO - [Demo] Samsung filter applied
+[Demo] 18:42:04 - Demo.TestDemoFavoritesFlow - INFO - [Demo] ✓ Samsung filter applied successfully
+[Demo] 18:42:04 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 3: Adding Galaxy S20+ to favorites
+[Demo] 18:42:04 - Demo.ProductsPage - INFO - [Demo] Adding Galaxy S20+ to favorites
+[Demo] 18:42:06 - Demo.ProductsPage - INFO - [Demo] Galaxy S20+ added to favorites
+[Demo] 18:42:06 - Demo.TestDemoFavoritesFlow - INFO - [Demo] ✓ Clicked favorite icon
+[Demo] 18:42:06 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 4: Navigating to favorites page
+[Demo] 18:42:06 - Demo.ProductsPage - INFO - [Demo] Navigating to favorites page
+[Demo] 18:42:08 - Demo.ProductsPage - INFO - [Demo] Navigated to favorites page
+[Demo] 18:42:08 - Demo.TestDemoFavoritesFlow - INFO - [Demo] ✅ Successfully verified Galaxy S20+ in favorites
+[Demo] 18:42:08 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Screenshot saved: screenshots/demo_demo_test_success_favorites_added.png
