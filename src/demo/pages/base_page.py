@@ -55,6 +55,15 @@ class BasePage:
             # If regular click fails, try JavaScript click
             self.logger.warning(f"[Demo] Regular click failed, trying JavaScript click: {locator}")
             self.driver.execute_script("arguments[0].click();", element)
+
+    # --- START: Added method to fix the AttributeError ---
+    def click_element(self, locator: Tuple[str, str]) -> None:
+        """
+        Alias for the 'click' method.
+        This is added for compatibility with page objects that call 'click_element'.
+        """
+        self.click(locator)
+    # --- END: Added method ---
     
     def is_element_visible(self, locator: Tuple[str, str], timeout: Optional[int] = None) -> bool:
         """Check if element is visible."""
@@ -100,3 +109,4 @@ class BasePage:
         element = self.find_element(locator)
         self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
         self.logger.debug(f"[Demo] Scrolled to element: {locator}")
+

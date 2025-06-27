@@ -15,7 +15,7 @@ def driver(request):
     """Setup and teardown driver for Demo tests."""
     # Check if we're running on BrowserStack via environment variables
     if os.environ.get('BS_BROWSER') or os.environ.get('BS_DEVICE'):
-        # BrowserStack execution
+        # --- BrowserStack execution (unchanged) ---
         username = os.environ.get('BROWSERSTACK_USERNAME')
         access_key = os.environ.get('BROWSERSTACK_ACCESS_KEY')
         
@@ -27,7 +27,6 @@ def driver(request):
             'debug': 'true'
         }
         
-        # Add browser/device specific options based on environment
         if os.environ.get('BS_DEVICE'):
             bstack_options['deviceName'] = os.environ.get('BS_DEVICE')
             bstack_options['osVersion'] = os.environ.get('BS_PLATFORM_VERSION')
@@ -43,11 +42,24 @@ def driver(request):
             options=options
         )
     else:
-        # Local Chrome driver
+        # --- START: Applied Local Chrome Fixes ---
+        # Local Chrome driver setup with robust options
         options = ChromeOptions()
-        options.add_argument("--disable-blink-features=AutomationControlled")
+        
+        ### <<< KEY FIX HERE
+        # This argument is essential for Chrome v111+ to allow WebDriver to connect.
+        options.add_argument("--remote-allow-origins=*")
+        
+        # Best-practice options for stability and to avoid detection
+        options.add_argument("--start-maximized")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+        
         driver = webdriver.Chrome(options=options)
+        # --- END: Applied Local Chrome Fixes ---
     
-    driver.implicitly_wait(10)
     yield driver
     driver.quit()
+

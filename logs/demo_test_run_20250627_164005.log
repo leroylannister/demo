@@ -1,0 +1,15 @@
+[Demo] 21:40:05 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 1: Logging into BStackDemo
+[Demo] 21:40:05 - Demo.LoginPage - INFO - [Demo] Starting login process...
+[Demo] 21:40:05 - Demo.LoginPage - INFO - [Demo] Navigating to bstackdemo.com...
+[Demo] 21:40:09 - Demo.LoginPage - INFO - [Demo] Page loaded successfully
+[Demo] 21:40:09 - Demo.LoginPage - INFO - [Demo] Looking for Sign In button...
+[Demo] 21:40:09 - Demo.LoginPage - INFO - [Demo] ✓ Clicked Sign In button
+[Demo] 21:40:12 - Demo.LoginPage - INFO - [Demo] ✓ Login modal opened successfully
+[Demo] 21:40:12 - Demo.LoginPage - INFO - [Demo] Debugging login modal...
+[Demo] 21:40:12 - Demo.LoginPage - INFO - [Demo] Found 2 input fields
+[Demo] 21:40:12 - Demo.LoginPage - INFO - [Demo] Input 0: type=text, id=react-select-2-input, name=, placeholder=
+[Demo] 21:40:12 - Demo.LoginPage - INFO - [Demo] Input 1: type=text, id=react-select-3-input, name=, placeholder=
+[Demo] 21:40:22 - Demo.LoginPage - INFO - [Demo] Found 0 select elements
+[Demo] 21:40:22 - Demo.LoginPage - INFO - [Demo] Found 1 buttons
+[Demo] 21:40:22 - Demo.LoginPage - INFO - [Demo] Button 0: text='LOG IN', type=submit, id=login-btn
+[Demo] 21:40:22 - Demo.LoginPage - INFO - [Demo] Entering username: demouser

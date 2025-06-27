@@ -1,0 +1,19 @@
+[Demo] 22:44:27 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 1: Logging into BStackDemo
+[Demo] 22:44:27 - Demo.LoginPage - INFO - [Demo] Starting login process...
+[Demo] 22:44:27 - Demo.LoginPage - INFO - [Demo] Navigating to bstackdemo.com...
+[Demo] 22:44:29 - Demo.LoginPage - INFO - [Demo] Page loaded successfully
+[Demo] 22:44:29 - Demo.LoginPage - INFO - [Demo] Looking for Sign In button...
+[Demo] 22:44:29 - Demo.LoginPage - INFO - [Demo] ✓ Clicked Sign In button
+[Demo] 22:44:29 - Demo.LoginPage - INFO - [Demo] ✓ Login modal opened successfully
+[Demo] 22:44:29 - Demo.LoginPage - INFO - [Demo] Selecting username: demouser...
+[Demo] 22:44:29 - Demo.LoginPage - INFO - [Demo] ✓ Clicked username dropdown
+[Demo] 22:44:39 - Demo.LoginPage - ERROR - [Demo] Username selection failed
+[Demo] 22:44:39 - Demo.LoginPage - INFO - [Demo] Selecting password...
+[Demo] 22:44:39 - Demo.LoginPage - INFO - [Demo] ✓ Clicked password dropdown
+[Demo] 22:44:49 - Demo.LoginPage - ERROR - [Demo] Password selection failed
+[Demo] 22:44:49 - Demo.LoginPage - INFO - [Demo] Clicking Login button...
+[Demo] 22:44:49 - Demo.LoginPage - INFO - [Demo] ✓ Clicked Login button
+[Demo] 22:44:59 - Demo.LoginPage - ERROR - [Demo] Login failed. Current URL: https://bstackdemo.com/signin
+[Demo] 22:44:59 - Demo.LoginPage - WARNING - [Demo] ⚠️ Login may have failed
+[Demo] 22:44:59 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 2: Filtering products by Samsung
+[Demo] 22:44:59 - Demo.ProductsPage - INFO - [Demo] Filtering products by Samsung

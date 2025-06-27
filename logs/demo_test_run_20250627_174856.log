@@ -1,0 +1,35 @@
+[Demo] 22:48:56 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 1: Logging into BStackDemo
+[Demo] 22:48:56 - Demo.LoginPage - INFO - [Demo] Starting login process...
+[Demo] 22:48:56 - Demo.LoginPage - INFO - [Demo] Navigating to bstackdemo.com...
+[Demo] 22:48:58 - Demo.LoginPage - INFO - [Demo] Page loaded successfully
+[Demo] 22:48:58 - Demo.LoginPage - INFO - [Demo] Looking for Sign In button...
+[Demo] 22:48:58 - Demo.LoginPage - INFO - [Demo] ✓ Clicked Sign In button
+[Demo] 22:48:59 - Demo.LoginPage - INFO - [Demo] ✓ Login modal opened successfully
+[Demo] 22:48:59 - Demo.LoginPage - INFO - [Demo] Entering credentials using keyboard navigation...
+[Demo] 22:48:59 - Demo.LoginPage - INFO - [Demo] ✓ Focused username field
+[Demo] 22:48:59 - Demo.LoginPage - ERROR - [Demo] An unexpected error occurred during credential entry: Message: element not interactable
+  (Session info: chrome=138.0.7204.50)
+Stacktrace:
+0   chromedriver                        0x00000001012e4eb4 cxxbridge1$str$ptr + 2722840
+1   chromedriver                        0x00000001012dcdbc cxxbridge1$str$ptr + 2689824
+2   chromedriver                        0x0000000100e2e260 cxxbridge1$string$len + 90252
+3   chromedriver                        0x0000000100e70188 cxxbridge1$string$len + 360372
+4   chromedriver                        0x0000000100e6ef0c cxxbridge1$string$len + 355640
+5   chromedriver                        0x0000000100e6ade4 cxxbridge1$string$len + 338960
+6   chromedriver                        0x0000000100eb6934 cxxbridge1$string$len + 649056
+7   chromedriver                        0x0000000100e69834 cxxbridge1$string$len + 333408
+8   chromedriver                        0x00000001012a7fd0 cxxbridge1$str$ptr + 2473268
+9   chromedriver                        0x00000001012ab23c cxxbridge1$str$ptr + 2486176
+10  chromedriver                        0x0000000101289a18 cxxbridge1$str$ptr + 2348924
+11  chromedriver                        0x00000001012abaf8 cxxbridge1$str$ptr + 2488412
+12  chromedriver                        0x000000010127aaa8 cxxbridge1$str$ptr + 2287628
+13  chromedriver                        0x00000001012cb9e8 cxxbridge1$str$ptr + 2619212
+14  chromedriver                        0x00000001012cbb74 cxxbridge1$str$ptr + 2619608
+15  chromedriver                        0x00000001012dc9f8 cxxbridge1$str$ptr + 2688860
+16  libsystem_pthread.dylib             0x0000000191712c0c _pthread_start + 136
+17  libsystem_pthread.dylib             0x000000019170db80 thread_start + 8
+
+[Demo] 22:49:09 - Demo.LoginPage - ERROR - [Demo] Login failed. Current URL: https://bstackdemo.com/signin
+[Demo] 22:49:09 - Demo.LoginPage - WARNING - [Demo] ⚠️ Login may have failed
+[Demo] 22:49:09 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 2: Filtering products by Samsung
+[Demo] 22:49:09 - Demo.ProductsPage - INFO - [Demo] Filtering products by Samsung
