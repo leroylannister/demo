@@ -30,12 +30,7 @@ def pytest_addoption(parser):
         choices=["chrome_windows", "firefox_mac", "samsung_mobile", "chrome_local"],
         help="Browser to run Demo tests on"
     )
-    parser.addoption(
-        "--local",
-        action="store_true",
-        default=False,
-        help="Run Demo tests locally instead of BrowserStack"
-    )
+  
     parser.addoption(
         "--headless",
         action="store_true",
