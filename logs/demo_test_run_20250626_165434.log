@@ -1,0 +1,5 @@
+[Demo] 16:54:34 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 1: Logging into BStackDemo
+[Demo] 16:54:34 - Demo.LoginPage - INFO - [Demo] Navigating to: https://www.bstackdemo.com/signin
+[Demo] 16:54:35 - Demo.LoginPage - INFO - [Demo] Navigated to login page
+[Demo] 16:54:36 - Demo.LoginPage - INFO - [Demo] Selecting username: demouser
+[Demo] 16:55:08 - Demo.LoginPage - INFO - [Demo] Trying alternative selector for username

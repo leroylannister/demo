@@ -1,0 +1,14 @@
+[Demo] 17:06:02 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 1: Logging into BStackDemo
+[Demo] 17:06:02 - Demo.LoginPage - INFO - [Demo] Navigating to: https://www.bstackdemo.com
+[Demo] 17:06:04 - Demo.LoginPage - INFO - [Demo] Clicking element: ('css selector', '#signin')
+[Demo] 17:06:05 - Demo.LoginPage - INFO - [Demo] Clicked sign-in button
+[Demo] 17:06:05 - Demo.LoginPage - INFO - [Demo] Selecting username: demouser
+[Demo] 17:06:05 - Demo.LoginPage - INFO - [Demo] Clicking element: ('id', 'username')
+[Demo] 17:06:05 - Demo.LoginPage - INFO - [Demo] Clicking element: ('css selector', '#react-select-2-option-0-0')
+[Demo] 17:06:05 - Demo.LoginPage - INFO - [Demo] Selected demouser
+[Demo] 17:06:05 - Demo.LoginPage - INFO - [Demo] Selecting password
+[Demo] 17:06:05 - Demo.LoginPage - INFO - [Demo] Clicking element: ('id', 'password')
+[Demo] 17:06:06 - Demo.LoginPage - INFO - [Demo] Clicking element: ('css selector', '#react-select-3-option-0-0')
+[Demo] 17:06:06 - Demo.LoginPage - INFO - [Demo] Selected password
+[Demo] 17:06:06 - Demo.LoginPage - INFO - [Demo] Clicking element: ('id', 'login-btn')
+[Demo] 17:06:06 - Demo.LoginPage - INFO - [Demo] Clicked login button
