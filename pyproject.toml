@@ -11,7 +11,8 @@ dependencies = [
     "pytest-html>=4.1.1",
     "python-dotenv>=1.0.0",
     "requests>=2.31.0",
-    "pytest-playwright>=0.7.0",
+    "pytest-browserstack>=0.1.0",
+    "browserstack-sdk>=1.0.0",
 ]
 
 [project.optional-dependencies]
