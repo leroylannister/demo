@@ -90,7 +90,7 @@ pipeline {
                             browser: 'Firefox',
                             browser_version: 'latest',
                             os: 'OS X',
-                            os_version: 'Sonoma'
+                            os_version: 'Ventura'
                         ],                 
                         'samsung_mobile': [
                             device: 'Samsung Galaxy S22',
