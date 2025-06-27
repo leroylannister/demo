@@ -1,5 +1,5 @@
 pipeline {
-    agent any // Or a specific agent like agent { label 'your-node-label' }
+    agent any
     
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
@@ -8,30 +8,17 @@ pipeline {
     }
     
     environment {
+        // Load secure credentials from Jenkins store
         BROWSERSTACK_USERNAME = credentials('browserstack-username')
         BROWSERSTACK_ACCESS_KEY = credentials('browserstack-access-key')
         TEST_USERNAME = credentials('test-username')
         TEST_PASSWORD = credentials('test-password')
+        
+        // Define an explicit path for UV if needed (your current PATH setup is good)
         PATH = "${env.HOME}/.local/bin:${env.HOME}/.cargo/bin:${env.PATH}"
     }
     
-    parameters {
-        choice(
-            name: 'BROWSER_SET',
-            choices: ['all', 'chrome_windows', 'firefox_mac', 'samsung_mobile'],
-            description: 'Which browser(s) to test on for Demo'
-        )
-        choice(
-            name: 'TEST_SUITE',
-            choices: ['smoke', 'regression', 'all'],
-            description: 'Which Demo test suite to run'
-        )
-        booleanParam(
-            name: 'PARALLEL_EXECUTION',
-            defaultValue: true,
-            description: 'Run Demo tests in parallel'
-        )
-    }
+    parameters { /* ... (your existing parameters) ... */ }
     
     stages {
         stage('Checkout') {
@@ -41,113 +28,46 @@ pipeline {
             }
         }
         
-        stage('Setup Environment') {
+        stage('Load Environment Variables') { // NEW STAGE
             steps {
                 script {
-                    sh '''
-                        if ! command -v uv &> /dev/null; then
-                            echo "Installing UV..."
-                            curl -LsSf https://astral.sh/uv/install.sh | sh
-                        fi
-                        uv --version
-                        uv venv
-                        source .venv/bin/activate
-                        uv pip sync pyproject.toml
-                        uv pip install -e ".[dev]"
-                        pytest --version
-                    '''
+                    // This reads the .env file and sets variables in the current build's environment
+                    // Assumes you have the EnvInject plugin or similar
+                    // The .env file must be at the root of your checked-out repo
+                    sh 'cat .env >> ./.jenkins_env_vars' // Creates a temp file to parse
+                    load_env '.jenkins_env_vars' // This step loads from the file
+                    sh 'rm ./.jenkins_env_vars' // Clean up temp file
+                    
+                    // You can echo to verify (secrets will be masked by Jenkins)
+                    echo "Loaded ENVIRONMENT: ${env.ENVIRONMENT}"
+                    echo "Loaded BASE_URL: ${env.BASE_URL}"
                 }
             }
         }
+        
+        stage('Setup Environment') { /* ... (your existing setup stage) ... */ }
         
         stage('Run Tests') {
             steps {
                 script {
-                    def browsers = []
-                    if (params.BROWSER_SET == 'all') {
-                        browsers = ['chrome_windows', 'firefox_mac', 'samsung_mobile']
-                    } else {
-                        browsers = [params.BROWSER_SET]
-                    }
-                    
-                    def testMarker = ''
-                    if (params.TEST_SUITE != 'all') {
-                        testMarker = "-m ${params.TEST_SUITE}"
-                    }
-                    
-                    if (params.PARALLEL_EXECUTION && browsers.size() > 1) {
-                        def parallelTests = [:]
-                        browsers.each { browser ->
-                            parallelTests[browser] = {
-                                sh """
-                                    source .venv/bin/activate
-                                    pytest tests/ \\
-                                        --browser=${browser} \\
-                                        ${testMarker} \\
-                                        --html=reports/demo_report_${browser}.html \\
-                                        --self-contained-html \\
-                                        --junitxml=reports/demo_junit_${browser}.xml \\
-                                        -v
-                                """
-                            }
-                        }
-                        parallel parallelTests
-                    } else {
-                        browsers.each { browser ->
-                            sh """
-                                source .venv/bin/activate
-                                pytest tests/ \\
-                                    --browser=${browser} \\
-                                    ${testMarker} \\
-                                    --html=reports/demo_report_${browser}.html \\
-                                    --self-contained-html \\
-                                    --junitxml=reports/demo_junit_${browser}.xml \\
-                                    -v
-                            """
-                        }
-                    }
+                    // Your tests will now automatically use ENVIRONMENT, BASE_URL etc.
+                    // For example, if pytest is configured to read from env vars:
+                    sh """
+                        source .venv/bin/activate
+                        pytest tests/ \
+                            --browser=${browser} \
+                            ${testMarker} \
+                            --html=reports/demo_report_${browser}.html \
+                            --self-contained-html \
+                            --junitxml=reports/demo_junit_${browser}.xml \
+                            -v
+                    """
                 }
             }
         }
         
-        // New stage for reporting and archiving
-        stage('Publish Reports and Archive Artifacts') {
-            steps {
-                script {
-                    // Archive test results
-                    junit 'reports/demo_junit_*.xml'
-                    
-                    // Archive HTML reports
-                    archiveArtifacts artifacts: 'reports/*.html', allowEmptyArchive: true
-                    
-                    // Archive logs
-                    archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
-                    
-                    // Archive screenshots
-                    archiveArtifacts artifacts: 'screenshots/*.png', allowEmptyArchive: true
-                    
-                    // Publish HTML reports
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'reports',
-                        reportFiles: '*.html',
-                        reportName: 'Demo Test Reports'
-                    ])
-                }
-            }
-        }
+        stage('Publish Reports and Archive Artifacts') { /* ... (your existing publish stage) ... */ }
     }
     
-    // Keep the post block for final status messages
-    post {
-        success {
-            echo '✅ Demo tests passed successfully!'
-        }
-        failure {
-            echo '❌ Demo tests failed!'
-        }
-        // Removed `always` block that was causing the error
-    }
+    post { /* ... (your existing post-build actions) ... */ }
 }
