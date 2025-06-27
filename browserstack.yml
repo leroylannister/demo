@@ -4,7 +4,7 @@ accessKey: ${BROWSERSTACK_ACCESS_KEY}
 buildName: "Demo Build - ${BUILD_NUMBER}"
 projectName: "Demo Project"
 
-# Platform configurations
+# Platform configurations - Reduced to the three required environments
 platforms:
   - browserName: Chrome
     browserVersion: latest
@@ -15,30 +15,13 @@ platforms:
   - browserName: Firefox
     browserVersion: latest
     os: OS X
-    osVersion: Sonoma
-    sessionName: "Firefox on macOS Sonoma"
-    
-  - browserName: Edge
-    browserVersion: latest
-    os: Windows
-    osVersion: "10"
-    sessionName: "Edge on Windows 10"
-    
-  - browserName: Safari
-    browserVersion: latest
-    os: OS X
-    osVersion: Sonoma
-    sessionName: "Safari on macOS Sonoma"
+    osVersion: Ventura # Updated from Sonoma to Ventura as requested
+    sessionName: "Firefox on macOS Ventura"
     
   - deviceName: Samsung Galaxy S22
     platformName: Android
     platformVersion: "12.0"
     sessionName: "Samsung Galaxy S22"
-    
-  - deviceName: iPhone 15
-    platformName: iOS
-    platformVersion: "17"
-    sessionName: "iPhone 15"
 
 # Test configuration
 parallelsPerPlatform: 1

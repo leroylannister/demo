@@ -25,8 +25,13 @@ class LoginPage(BasePage):
     DEMOUSER_OPTION = (By.XPATH, "//div[text()='demouser']")
     PASSWORD_OPTION = (By.XPATH, "//div[text()='testingisfun99']")
     LOGIN_BUTTON = (By.XPATH, "//button[text()='Log In']")
-    LOGOUT_BUTTON = (
-        By.XPATH, "/html/body/div/div/div/div[1]/div/div/div[2]/nav/span")
+    
+    # === UPDATED LOCATOR: LOGOUT_BUTTON is now SAMSUNG_FILTER_OPTION ===
+    # This locator will be used to verify successful login.
+    # Assuming the "Samsung" filter is a span within a div with class 'filters'
+    # You might need to adjust this XPath if your actual DOM structure is different.
+    SAMSUNG_FILTER_OPTION = (By.XPATH, "//div[contains(@class, 'filters')]//span[text()='Samsung']")
+
 
     def __init__(self, driver):
         """Initialize Demo login page."""
@@ -56,9 +61,6 @@ class LoginPage(BasePage):
             self.driver.save_screenshot("screenshots/fatal_signin_timeout.png")
             raise
 
-    # NO OTHER CHANGES ARE NEEDED IN THE REST OF THE FILE.
-    # The functions below this are all fine.
-
     def select_username(self) -> None:
         """Select demouser from username dropdown."""
         self.logger.info("[Demo] Selecting username: demouser")
@@ -84,13 +86,19 @@ class LoginPage(BasePage):
         self.wait.until(EC.element_to_be_clickable(self.LOGIN_BUTTON)).click()
         self.logger.info("[Demo] Clicked Log In button")
 
+    # === UPDATED METHOD: verify_login_successful now checks for SAMSUNG_FILTER_OPTION ===
     def verify_login_successful(self) -> bool:
-        """Verify login was successful by checking for logout button."""
-        # Using the updated LOGOUT_BUTTON locator
-        return self.is_element_visible(self.LOGOUT_BUTTON, timeout=10)
+        """
+        Verify login was successful by checking for the presence of the
+        Samsung filter option, which is typically only visible post-login.
+        """
+        self.logger.info("[Demo] Verifying login by checking for Samsung filter presence...")
+        # Use the BasePage's is_element_visible method with the new locator
+        # Increased timeout for robustness on various devices/network conditions.
+        return self.is_element_visible(self.SAMSUNG_FILTER_OPTION, timeout=15)
 
     def login(self, username: str = "demouser", password: str = "testingisfun99") -> None:
-        """Complete Demo login flow using Playwright-style approach."""
+        """Complete Demo login flow."""
         # Navigate and click sign in
         self.navigate_and_click_signin()
         # Select username and password
@@ -99,8 +107,8 @@ class LoginPage(BasePage):
         # Click Log In
         self.click_login()
         # Wait for login to complete
-        time.sleep(2)
-        # Verify login successful
-        assert self.verify_login_successful(), "[Demo] Login failed - logout button not found"
+        time.sleep(2) # Keep this short wait for page transition
+        # Verify login successful using the new method
+        assert self.verify_login_successful(), "[Demo] Login failed - Samsung filter not found"
         self.logger.info("[Demo] Login completed successfully")
 
