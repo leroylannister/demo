@@ -105,12 +105,40 @@ pipeline {
                     // Define a map of common BrowserStack platform configurations
                     // These keys correspond to the PLATFORM_SET parameter choices
                     def platformConfigs = [
-                        'chrome_windows': [browser: 'chrome', os: 'Windows', os_version: '10'],
-                        'firefox_mac':    [browser: 'firefox', os: 'OS X', os_version: 'Sonoma'],
-                        'edge_windows':   [browser: 'edge', os: 'Windows', os_version: '10'],
-                        'safari_mac':     [browser: 'safari', os: 'OS X', os_version: 'Sonoma'],
-                        'samsung_mobile': [device: 'Samsung Galaxy S22', os: 'Android', os_version: '12.0', real_mobile: 'true'],
-                        'iphone_mobile':  [device: 'iPhone 15', os: 'iOS', os_version: '17', real_mobile: 'true']
+                        'chrome_windows': [
+                            browser: 'Chrome',
+                            browser_version: 'latest',
+                            os: 'Windows',
+                            os_version: '10'
+                        ],
+                        'firefox_mac': [
+                            browser: 'Firefox',
+                            browser_version: 'latest',
+                            os: 'OS X',
+                            os_version: 'Sonoma'
+                        ],
+                        'edge_windows': [
+                            browser: 'Edge',
+                            browser_version: 'latest',
+                            os: 'Windows',
+                            os_version: '10'
+                        ],
+                        'safari_mac': [
+                            browser: 'Safari',
+                            browser_version: 'latest',
+                            os: 'OS X',
+                            os_version: 'Sonoma'
+                        ],
+                        'samsung_mobile': [
+                            device: 'Samsung Galaxy S22',
+                            platform_name: 'Android',
+                            platform_version: '12.0'
+                        ],
+                        'iphone_mobile': [
+                            device: 'iPhone 15',
+                            platform_name: 'iOS',
+                            platform_version: '17'
+                        ]
                     ]
 
                     def selectedPlatforms = []
@@ -138,31 +166,43 @@ pipeline {
                             parallelTests[platformKey] = {
                                 // Get the specific configuration for the current platform
                                 def config = platformConfigs[platformKey]
-                                // Dynamically construct pytest command-line arguments
-                                def browserArg = config.browser ? "--browser='${config.browser}'" : ""
-                                def osArg = config.os ? "--os='${config.os}'" : ""
-                                def osVersionArg = config.os_version ? "--os-version='${config.os_version}'" : ""
-                                def deviceArg = config.device ? "--device='${config.device}'" : ""
-                                def realMobileArg = config.real_mobile == 'true' ? "--real_mobile='true'" : ""
+                                
+                                // Set environment variables for BrowserStack configuration
+                                def envVars = [
+                                    "BROWSERSTACK_BUILD_NAME=Demo-Build-${env.BUILD_NUMBER}",
+                                    "BROWSERSTACK_PROJECT_NAME=Demo-Project",
+                                    "BROWSERSTACK_SESSION_NAME=${platformKey}-${env.BUILD_NUMBER}"
+                                ]
+                                
+                                // Add platform-specific environment variables
+                                if (config.browser) {
+                                    envVars.add("BS_BROWSER=${config.browser}")
+                                    envVars.add("BS_BROWSER_VERSION=${config.browser_version}")
+                                    envVars.add("BS_OS=${config.os}")
+                                    envVars.add("BS_OS_VERSION=${config.os_version}")
+                                } else if (config.device) {
+                                    envVars.add("BS_DEVICE=${config.device}")
+                                    envVars.add("BS_PLATFORM_NAME=${config.platform_name}")
+                                    envVars.add("BS_PLATFORM_VERSION=${config.platform_version}")
+                                }
 
-                                sh """
-                                    # Activate the virtual environment
-                                    source .venv/bin/activate
-                                    
-                                    # Run pytest with dynamic BrowserStack arguments
-                                    # HTML and JUnit reports are generated per platform
-                                    pytest tests/ \\
-                                        ${browserArg} \\
-                                        ${osArg} \\
-                                        ${osVersionArg} \\
-                                        ${deviceArg} \\
-                                        ${realMobileArg} \\
-                                        ${testMarker} \\
-                                        --html=reports/demo_report_${platformKey}.html \\
-                                        --self-contained-html \\
-                                        --junitxml=reports/demo_junit_${platformKey}.xml \\
-                                        -v
-                                """
+                                withEnv(envVars) {
+                                    sh """
+                                        # Activate the virtual environment
+                                        source .venv/bin/activate
+                                        
+                                        # Create reports directory if it doesn't exist
+                                        mkdir -p reports
+                                        
+                                        # Run pytest with environment-based configuration
+                                        pytest tests/ \\
+                                            ${testMarker} \\
+                                            --html=reports/demo_report_${platformKey}.html \\
+                                            --self-contained-html \\
+                                            --junitxml=reports/demo_junit_${platformKey}.xml \\
+                                            -v
+                                    """
+                                }
                             }
                         }
                         // Execute tests in parallel
@@ -171,29 +211,43 @@ pipeline {
                         // If parallel execution is off or only one platform is selected, run sequentially
                         selectedPlatforms.each { platformKey ->
                             def config = platformConfigs[platformKey]
-                            def browserArg = config.browser ? "--browser='${config.browser}'" : ""
-                            def osArg = config.os ? "--os='${config.os}'" : ""
-                            def osVersionArg = config.os_version ? "--os-version='${config.os_version}'" : ""
-                            def deviceArg = config.device ? "--device='${config.device}'" : ""
-                            def realMobileArg = config.real_mobile == 'true' ? "--real_mobile='true'" : ""
+                            
+                            // Set environment variables for BrowserStack configuration
+                            def envVars = [
+                                "BROWSERSTACK_BUILD_NAME=Demo-Build-${env.BUILD_NUMBER}",
+                                "BROWSERSTACK_PROJECT_NAME=Demo-Project",
+                                "BROWSERSTACK_SESSION_NAME=${platformKey}-${env.BUILD_NUMBER}"
+                            ]
+                            
+                            // Add platform-specific environment variables
+                            if (config.browser) {
+                                envVars.add("BS_BROWSER=${config.browser}")
+                                envVars.add("BS_BROWSER_VERSION=${config.browser_version}")
+                                envVars.add("BS_OS=${config.os}")
+                                envVars.add("BS_OS_VERSION=${config.os_version}")
+                            } else if (config.device) {
+                                envVars.add("BS_DEVICE=${config.device}")
+                                envVars.add("BS_PLATFORM_NAME=${config.platform_name}")
+                                envVars.add("BS_PLATFORM_VERSION=${config.platform_version}")
+                            }
 
-                            sh """
-                                # Activate the virtual environment
-                                source .venv/bin/activate
-                                
-                                # Run pytest with dynamic BrowserStack arguments
-                                pytest tests/ \\
-                                    ${browserArg} \\
-                                    ${osArg} \\
-                                    ${osVersionArg} \\
-                                    ${deviceArg} \\
-                                    ${realMobileArg} \\
-                                    ${testMarker} \\
-                                    --html=reports/demo_report_${platformKey}.html \\
-                                    --self-contained-html \\
-                                    --junitxml=reports/demo_junit_${platformKey}.xml \\
-                                    -v
-                            """
+                            withEnv(envVars) {
+                                sh """
+                                    # Activate the virtual environment
+                                    source .venv/bin/activate
+                                    
+                                    # Create reports directory if it doesn't exist
+                                    mkdir -p reports
+                                    
+                                    # Run pytest with environment-based configuration
+                                    pytest tests/ \\
+                                        ${testMarker} \\
+                                        --html=reports/demo_report_${platformKey}.html \\
+                                        --self-contained-html \\
+                                        --junitxml=reports/demo_junit_${platformKey}.xml \\
+                                        -v
+                                """
+                            }
                         }
                     }
                 }
@@ -205,16 +259,28 @@ pipeline {
             steps {
                 script {
                     // Archive JUnit XML test results for Jenkins' built-in reporting
-                    junit 'reports/demo_junit_*.xml'
+                    junit(
+                        testResults: 'reports/demo_junit_*.xml',
+                        allowEmptyResults: true
+                    )
 
                     // Archive HTML reports
-                    archiveArtifacts artifacts: 'reports/*.html', allowEmptyArchive: true
+                    archiveArtifacts(
+                        artifacts: 'reports/*.html',
+                        allowEmptyArchive: true
+                    )
 
                     // Archive log files
-                    archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
+                    archiveArtifacts(
+                        artifacts: 'logs/*.log',
+                        allowEmptyArchive: true
+                    )
 
-                    // Archive screenshots
-                    archiveAartifacts artifacts: 'screenshots/*.png', allowEmptyArchive: true
+                    // Archive screenshots (fixed typo: archiveAartifacts -> archiveArtifacts)
+                    archiveArtifacts(
+                        artifacts: 'screenshots/*.png',
+                        allowEmptyArchive: true
+                    )
 
                     // Publish HTML reports using the HTML Publisher Plugin
                     publishHTML([
@@ -234,28 +300,36 @@ pipeline {
     post {
         // Actions to run always, regardless of the pipeline's outcome
         always {
-            steps {
-                // This block is now syntactically correct and will not cause an error.
-                echo 'Pipeline run has completed.'
-            }
+            // No steps block needed - direct commands only
+            echo 'Pipeline run has completed.'
+            
+            // Clean up workspace if needed
+            cleanWs(
+                cleanWhenNotBuilt: false,
+                deleteDirs: true,
+                disableDeferredWipeout: true,
+                notFailBuild: true,
+                patterns: [[pattern: '.venv/**', type: 'INCLUDE']]
+            )
         }
         // Actions to run if the pipeline succeeds
         success {
-            steps {
-                echo '✅ Demo tests passed successfully!'
-            }
+            echo '✅ Demo tests passed successfully!'
         }
         // Actions to run if the pipeline fails
         failure {
-            steps {
-                echo '❌ Demo tests failed!'
-            }
+            echo '❌ Demo tests failed!'
+            
+            // Send notification if needed
+            // emailext(
+            //     subject: "Build Failed: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
+            //     body: "The build failed. Check the console output for details.",
+            //     to: 'team@example.com'
+            // )
         }
         // Actions to run if the pipeline is aborted
         aborted {
-            steps {
-                echo '🚫 Demo tests aborted!'
-            }
+            echo '🚫 Demo tests aborted!'
         }
     }
 }

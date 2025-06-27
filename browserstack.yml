@@ -1,0 +1,51 @@
+# BrowserStack configuration file
+userName: ${BROWSERSTACK_USERNAME}
+accessKey: ${BROWSERSTACK_ACCESS_KEY}
+buildName: "Demo Build - ${BUILD_NUMBER}"
+projectName: "Demo Project"
+
+# Platform configurations
+platforms:
+  - browserName: Chrome
+    browserVersion: latest
+    os: Windows
+    osVersion: "10"
+    sessionName: "Chrome on Windows 10"
+    
+  - browserName: Firefox
+    browserVersion: latest
+    os: OS X
+    osVersion: Sonoma
+    sessionName: "Firefox on macOS Sonoma"
+    
+  - browserName: Edge
+    browserVersion: latest
+    os: Windows
+    osVersion: "10"
+    sessionName: "Edge on Windows 10"
+    
+  - browserName: Safari
+    browserVersion: latest
+    os: OS X
+    osVersion: Sonoma
+    sessionName: "Safari on macOS Sonoma"
+    
+  - deviceName: Samsung Galaxy S22
+    platformName: Android
+    platformVersion: "12.0"
+    sessionName: "Samsung Galaxy S22"
+    
+  - deviceName: iPhone 15
+    platformName: iOS
+    platformVersion: "17"
+    sessionName: "iPhone 15"
+
+# Test configuration
+parallelsPerPlatform: 1
+browserstackLocal: true
+debug: true
+consoleLogs: info
+networkLogs: true
+
+# Timeouts
+idleTimeout: 300
