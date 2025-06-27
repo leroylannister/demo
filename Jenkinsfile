@@ -123,7 +123,7 @@ pipeline {
                         // Otherwise, use the single selected platform
                         selectedPlatforms = [params.PLATFORM_SET]
                     }
-
+                    
                     // Build the pytest marker string if a specific test suite is chosen
                     def testMarker = ''
                     if (params.TEST_SUITE != 'all') {
@@ -200,54 +200,4 @@ pipeline {
             }
         }
 
-        // Stage for publishing test reports and archiving artifacts
-        stage('Publish Reports and Archive Artifacts') {
-            steps {
-                script {
-                    // Archive JUnit XML test results for Jenkins' built-in reporting
-                    junit 'reports/demo_junit_*.xml'
-
-                    // Archive HTML reports
-                    archiveArtifacts artifacts: 'reports/*.html', allowEmptyArchive: true
-
-                    // Archive log files
-                    archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
-
-                    // Archive screenshots
-                    archiveArtifacts artifacts: 'screenshots/*.png', allowEmptyArchive: true
-
-                    // Publish HTML reports using the HTML Publisher Plugin
-                    publishHTML([
-                        allowMissing: false,            // Fail build if report files are missing
-                        alwaysLinkToLastBuild: true,    // Always link to the latest build's report
-                        keepAll: true,                  // Keep historical reports
-                        reportDir: 'reports',           // Directory containing HTML reports
-                        reportFiles: '*.html',          // Pattern for report files
-                        reportName: 'Demo Test Reports' // Name displayed in Jenkins UI
-                    ])
-                }
-            }
-        }
-    }
-
-    // Post-build actions (run after all stages complete)
-    post {
-        // Actions to run always
-        always {
-            // No specific actions here, as archiving/publishing is done in a stage.
-            // This block is left for potential future cleanup or notifications.
-        }
-        // Actions to run if the pipeline succeeds
-        success {
-            echo '✅ Demo tests passed successfully!'
-        }
-        // Actions to run if the pipeline fails
-        failure {
-            echo '❌ Demo tests failed!'
-        }
-        // Actions to run if the pipeline is aborted
-        aborted {
-            echo '🚫 Demo tests aborted!'
-        }
-    }
-}
+        // Stage for publishing test reports and archiving
