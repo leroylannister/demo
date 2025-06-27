@@ -14,11 +14,27 @@ pipeline {
         TEST_USERNAME = credentials('test-username')
         TEST_PASSWORD = credentials('test-password')
         
-        // Define an explicit path for UV if needed (your current PATH setup is good)
+        // Define an explicit path for UV if needed
         PATH = "${env.HOME}/.local/bin:${env.HOME}/.cargo/bin:${env.PATH}"
     }
     
-    parameters { /* ... (your existing parameters) ... */ }
+    parameters { // <-- This section was empty
+        choice(
+            name: 'BROWSER_SET',
+            choices: ['all', 'chrome_windows', 'firefox_mac', 'samsung_mobile'],
+            description: 'Which browser(s) to test on for Demo'
+        )
+        choice(
+            name: 'TEST_SUITE',
+            choices: ['smoke', 'regression', 'all'],
+            description: 'Which Demo test suite to run'
+        )
+        booleanParam(
+            name: 'PARALLEL_EXECUTION',
+            defaultValue: true,
+            description: 'Run Demo tests in parallel'
+        )
+    }
     
     stages {
         stage('Checkout') {
@@ -28,46 +44,111 @@ pipeline {
             }
         }
         
-        stage('Load Environment Variables') { // NEW STAGE
-            steps {
+        stage('Setup Environment') {
+            steps { // <-- This was missing from the stage
                 script {
-                    // This reads the .env file and sets variables in the current build's environment
-                    // Assumes you have the EnvInject plugin or similar
-                    // The .env file must be at the root of your checked-out repo
-                    sh 'cat .env >> ./.jenkins_env_vars' // Creates a temp file to parse
-                    load_env '.jenkins_env_vars' // This step loads from the file
-                    sh 'rm ./.jenkins_env_vars' // Clean up temp file
-                    
-                    // You can echo to verify (secrets will be masked by Jenkins)
-                    echo "Loaded ENVIRONMENT: ${env.ENVIRONMENT}"
-                    echo "Loaded BASE_URL: ${env.BASE_URL}"
+                    sh '''
+                        if ! command -v uv &> /dev/null; then
+                            echo "Installing UV..."
+                            curl -LsSf https://astral.sh/uv/install.sh | sh
+                        fi
+                        
+                        uv --version
+                        uv venv
+                        source .venv/bin/activate
+                        uv pip sync pyproject.toml
+                        uv pip install -e ".[dev]"
+                        pytest --version
+                    '''
                 }
             }
         }
-        
-        stage('Setup Environment') { /* ... (your existing setup stage) ... */ }
         
         stage('Run Tests') {
             steps {
                 script {
-                    // Your tests will now automatically use ENVIRONMENT, BASE_URL etc.
-                    // For example, if pytest is configured to read from env vars:
-                    sh """
-                        source .venv/bin/activate
-                        pytest tests/ \
-                            --browser=${browser} \
-                            ${testMarker} \
-                            --html=reports/demo_report_${browser}.html \
-                            --self-contained-html \
-                            --junitxml=reports/demo_junit_${browser}.xml \
-                            -v
-                    """
+                    def browsers = []
+                    if (params.BROWSER_SET == 'all') {
+                        browsers = ['chrome_windows', 'firefox_mac', 'samsung_mobile']
+                    } else {
+                        browsers = [params.BROWSER_SET]
+                    }
+                    
+                    def testMarker = ''
+                    if (params.TEST_SUITE != 'all') {
+                        testMarker = "-m ${params.TEST_SUITE}"
+                    }
+                    
+                    if (params.PARALLEL_EXECUTION && browsers.size() > 1) {
+                        def parallelTests = [:]
+                        browsers.each { browser ->
+                            parallelTests[browser] = {
+                                sh """
+                                    source .venv/bin/activate
+                                    pytest tests/ \\
+                                        --browser=${browser} \\
+                                        ${testMarker} \\
+                                        --html=reports/demo_report_${browser}.html \\
+                                        --self-contained-html \\
+                                        --junitxml=reports/demo_junit_${browser}.xml \\
+                                        -v
+                                """
+                            }
+                        }
+                        parallel parallelTests
+                    } else {
+                        browsers.each { browser ->
+                            sh """
+                                source .venv/bin/activate
+                                pytest tests/ \\
+                                    --browser=${browser} \\
+                                    ${testMarker} \\
+                                    --html=reports/demo_report_${browser}.html \\
+                                    --self-contained-html \\
+                                    --junitxml=reports/demo_junit_${browser}.xml \\
+                                    -v
+                            """
+                        }
+                    }
                 }
             }
         }
         
-        stage('Publish Reports and Archive Artifacts') { /* ... (your existing publish stage) ... */ }
+        stage('Publish Reports and Archive Artifacts') {
+            steps { // <-- This was missing from the stage
+                script {
+                    // Archive test results
+                    junit 'reports/demo_junit_*.xml'
+                    
+                    // Archive HTML reports
+                    archiveArtifacts artifacts: 'reports/*.html', allowEmptyArchive: true
+                    
+                    // Archive logs
+                    archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
+                    
+                    // Archive screenshots
+                    archiveArtifacts artifacts: 'screenshots/*.png', allowEmptyArchive: true
+                    
+                    // Publish HTML reports
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'reports',
+                        reportFiles: '*.html',
+                        reportName: 'Demo Test Reports'
+                    ])
+                }
+            }
+        }
     }
     
-    post { /* ... (your existing post-build actions) ... */ }
+    post { // <-- This section was empty
+        success {
+            echo '✅ Demo tests passed successfully!'
+        }
+        failure {
+            echo '❌ Demo tests failed!'
+        }
+    }
 }
