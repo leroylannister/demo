@@ -1,8 +1,9 @@
 # BrowserStack configuration file
-userName: ${BROWSERSTACK_USERNAME}
-accessKey: ${BROWSERSTACK_ACCESS_KEY}
-buildName: "Demo Build - ${BUILD_NUMBER}"
-projectName: "Demo Project"
+userName: "YOUR_USERNAME"
+accessKey: "YOUR_ACCESS_KEY"
+buildName: "Demo Favorites Test"
+projectName: "Technical Challenge"
+testObservability: true
 
 # Platform configurations - Reduced to the three required environments
 platforms:

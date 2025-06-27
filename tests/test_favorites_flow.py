@@ -26,47 +26,73 @@ class TestDemoFavoritesFlow(TestBase):
         3. Favorite the Galaxy S20+ device (id=11)
         4. Navigate to Favourites and verify Galaxy S20+ is there
         """
-        # Initialize page objects
-        login_page = LoginPage(self.driver)
-        products_page = ProductsPage(self.driver)
-        favorites_page = FavoritesPage(self.driver)
-        
-        # Step 1: Login using Playwright-style approach
-        self.logger.info("[Demo] Step 1: Logging into BStackDemo")
-        login_page.login()
-        
-        # Step 2: Click Samsung filter
-        self.logger.info("[Demo] Step 2: Filtering products by Samsung")
-        products_page.filter_by_samsung()
-        
-        # Verify Galaxy S20+ is visible
-        assert products_page.is_product_displayed("Galaxy S20+"), \
-            "[Demo] Galaxy S20+ not found after Samsung filter"
-        self.logger.info("[Demo] ✓ Samsung filter applied successfully")
-        
-        # Step 3: Favorite Galaxy S20+ (id=11)
-        self.logger.info("[Demo] Step 3: Adding Galaxy S20+ to favorites")
-        products_page.favorite_galaxy_s20_plus()
-        self.logger.info("[Demo] ✓ Clicked favorite icon")
-        
-        # Step 4: Navigate to favorites and verify
-        self.logger.info("[Demo] Step 4: Navigating to favorites page")
-        products_page.navigate_to_favorites()
-        
-        # Verify Galaxy S20+ is in favorites
-        assert favorites_page.is_product_in_favorites("Galaxy S20+"), \
-            "[Demo] Galaxy S20+ not found in favorites"
-        
-        self.logger.info("[Demo] ✅ Successfully verified Galaxy S20+ in favorites")
-        self.take_screenshot("demo_test_success_favorites_added")
+        try:
+            # Initialize page objects
+            login_page = LoginPage(self.driver)
+            products_page = ProductsPage(self.driver)
+            favorites_page = FavoritesPage(self.driver)
+            
+            # Step 1: Login using Playwright-style approach
+            self.logger.info("[Demo] Step 1: Logging into BStackDemo")
+            login_page.login()
+            
+            # Step 2: Click Samsung filter
+            self.logger.info("[Demo] Step 2: Filtering products by Samsung")
+            products_page.filter_by_samsung()
+            
+            # Verify Galaxy S20+ is visible
+            assert products_page.is_product_displayed("Galaxy S20+"), \
+                "[Demo] Galaxy S20+ not found after Samsung filter"
+            self.logger.info("[Demo] ✓ Samsung filter applied successfully")
+            
+            # Step 3: Favorite Galaxy S20+ (id=11)
+            self.logger.info("[Demo] Step 3: Adding Galaxy S20+ to favorites")
+            products_page.favorite_galaxy_s20_plus()
+            self.logger.info("[Demo] ✓ Clicked favorite icon")
+            
+            # Step 4: Navigate to favorites and verify
+            self.logger.info("[Demo] Step 4: Navigating to favorites page")
+            products_page.navigate_to_favorites()
+            
+            # Verify Galaxy S20+ is in favorites
+            assert favorites_page.is_product_in_favorites("Galaxy S20+"), \
+                "[Demo] Galaxy S20+ not found in favorites"
+            
+            self.logger.info("[Demo] ✅ Successfully verified Galaxy S20+ in favorites")
+            self.take_screenshot("demo_test_success_favorites_added")
 
-    # In your test_favorites_flow.py, temporarily add:
-    def test_debug_page(self, driver):
-        driver.get("https://www.bstackdemo.com")
-        time.sleep(2)  # Give page time to load
-        
-        # Print all links on the page
-        links = driver.find_elements(By.TAG_NAME, "a")
-        print(f"\nFound {len(links)} links on page:")
-        for link in links:
-            print(f"  Text: '{link.text}' | Href: {link.get_attribute('href')}")
+            # Mark test as PASSED on BrowserStack
+            self.driver.execute_script(
+                'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"passed", "reason": "Samsung device successfully added to favorites"}}'
+            )
+            
+        except Exception as e:
+            # Mark test as FAILED on BrowserStack
+            self.driver.execute_script(
+                'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"failed", "reason": "' + str(e) + '"}}'
+            )
+            raise  # Re-raise the exception so pytest still marks it as failed
+
+    def test_debug_page(self):
+        """Debug test to analyze page structure with BrowserStack status marking"""
+        try:
+            self.driver.get("https://www.bstackdemo.com")
+            time.sleep(2)  # Give page time to load
+            
+            # Print all links on the page
+            links = self.driver.find_elements(By.TAG_NAME, "a")
+            print(f"\nFound {len(links)} links on page:")
+            for link in links:
+                print(f"  Text: '{link.text}' | Href: {link.get_attribute('href')}")
+            
+            # Mark test as PASSED on BrowserStack
+            self.driver.execute_script(
+                'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"passed", "reason": "Debug test completed successfully"}}'
+            )
+            
+        except Exception as e:
+            # Mark test as FAILED on BrowserStack
+            self.driver.execute_script(
+                'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"failed", "reason": "' + str(e) + '"}}'
+            )
+            raise
