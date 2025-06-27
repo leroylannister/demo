@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent any // Or a specific agent like agent { label 'your-node-label' }
     
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
@@ -8,13 +8,10 @@ pipeline {
     }
     
     environment {
-        // Load credentials from Jenkins
         BROWSERSTACK_USERNAME = credentials('browserstack-username')
         BROWSERSTACK_ACCESS_KEY = credentials('browserstack-access-key')
         TEST_USERNAME = credentials('test-username')
         TEST_PASSWORD = credentials('test-password')
-        
-        // Python/UV paths - adjust based on your Jenkins setup
         PATH = "${env.HOME}/.local/bin:${env.HOME}/.cargo/bin:${env.PATH}"
     }
     
@@ -47,25 +44,16 @@ pipeline {
         stage('Setup Environment') {
             steps {
                 script {
-                    // Check if UV is installed, if not install it
                     sh '''
                         if ! command -v uv &> /dev/null; then
                             echo "Installing UV..."
                             curl -LsSf https://astral.sh/uv/install.sh | sh
                         fi
-                        
-                        # Verify UV installation
                         uv --version
-                        
-                        # Create virtual environment
                         uv venv
-                        
-                        # Install dependencies
                         source .venv/bin/activate
                         uv pip sync pyproject.toml
                         uv pip install -e ".[dev]"
-                        
-                        # Verify pytest is available
                         pytest --version
                     '''
                 }
@@ -76,7 +64,6 @@ pipeline {
             steps {
                 script {
                     def browsers = []
-                    
                     if (params.BROWSER_SET == 'all') {
                         browsers = ['chrome_windows', 'firefox_mac', 'samsung_mobile']
                     } else {
@@ -89,36 +76,32 @@ pipeline {
                     }
                     
                     if (params.PARALLEL_EXECUTION && browsers.size() > 1) {
-                        // Run tests in parallel
                         def parallelTests = [:]
-                        
                         browsers.each { browser ->
                             parallelTests[browser] = {
                                 sh """
                                     source .venv/bin/activate
-                                    pytest tests/ \
-                                        --browser=${browser} \
-                                        ${testMarker} \
-                                        --html=reports/demo_report_${browser}.html \
-                                        --self-contained-html \
-                                        --junitxml=reports/demo_junit_${browser}.xml \
+                                    pytest tests/ \\
+                                        --browser=${browser} \\
+                                        ${testMarker} \\
+                                        --html=reports/demo_report_${browser}.html \\
+                                        --self-contained-html \\
+                                        --junitxml=reports/demo_junit_${browser}.xml \\
                                         -v
                                 """
                             }
                         }
-                        
                         parallel parallelTests
                     } else {
-                        // Run tests sequentially
                         browsers.each { browser ->
                             sh """
                                 source .venv/bin/activate
-                                pytest tests/ \
-                                    --browser=${browser} \
-                                    ${testMarker} \
-                                    --html=reports/demo_report_${browser}.html \
-                                    --self-contained-html \
-                                    --junitxml=reports/demo_junit_${browser}.xml \
+                                pytest tests/ \\
+                                    --browser=${browser} \\
+                                    ${testMarker} \\
+                                    --html=reports/demo_report_${browser}.html \\
+                                    --self-contained-html \\
+                                    --junitxml=reports/demo_junit_${browser}.xml \\
                                     -v
                             """
                         }
@@ -126,39 +109,45 @@ pipeline {
                 }
             }
         }
+        
+        // New stage for reporting and archiving
+        stage('Publish Reports and Archive Artifacts') {
+            steps {
+                script {
+                    // Archive test results
+                    junit 'reports/demo_junit_*.xml'
+                    
+                    // Archive HTML reports
+                    archiveArtifacts artifacts: 'reports/*.html', allowEmptyArchive: true
+                    
+                    // Archive logs
+                    archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
+                    
+                    // Archive screenshots
+                    archiveArtifacts artifacts: 'screenshots/*.png', allowEmptyArchive: true
+                    
+                    // Publish HTML reports
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'reports',
+                        reportFiles: '*.html',
+                        reportName: 'Demo Test Reports'
+                    ])
+                }
+            }
+        }
     }
     
+    // Keep the post block for final status messages
     post {
-        always {
-            // Archive test results
-            junit 'reports/demo_junit_*.xml'
-            
-            // Archive HTML reports
-            archiveArtifacts artifacts: 'reports/*.html', allowEmptyArchive: true
-            
-            // Archive logs
-            archiveArtifacts artifacts: 'logs/*.log', allowEmptyArchive: true
-            
-            // Archive screenshots
-            archiveArtifacts artifacts: 'screenshots/*.png', allowEmptyArchive: true
-            
-            // Publish HTML reports
-            publishHTML([
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'reports',
-                reportFiles: '*.html',
-                reportName: 'Demo Test Reports'
-            ])
-        }
-        
         success {
             echo '✅ Demo tests passed successfully!'
         }
-        
         failure {
             echo '❌ Demo tests failed!'
         }
+        // Removed `always` block that was causing the error
     }
 }
