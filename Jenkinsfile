@@ -1,5 +1,5 @@
 pipeline {
-    agent any // Designates that the pipeline can run on any available Jenkins agent
+    agent any
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
@@ -13,7 +13,6 @@ pipeline {
         TEST_USERNAME = credentials('test-username')
         TEST_PASSWORD = credentials('test-password')
         PATH = "${env.HOME}/.local/bin:${env.HOME}/.cargo/bin:${env.PATH}"
-        USE_BROWSERSTACK = 'true'  // Enable BrowserStack by default
     }
 
     parameters {
@@ -25,22 +24,17 @@ pipeline {
                 'firefox_mac',
                 'samsung_mobile',
             ],
-            description: 'Which browser/OS combination(s) to test on BrowserStack.'
+            description: 'Which browser/OS combination(s) to test.'
         )
         choice(
             name: 'TEST_SUITE',
             choices: ['smoke', 'regression', 'all'],
-            description: 'Which Demo test suite to run (via pytest markers).'
+            description: 'Which test suite to run.'
         )
         booleanParam(
             name: 'PARALLEL_EXECUTION',
             defaultValue: true,
-            description: 'Run tests for selected platforms in parallel.'
-        )
-        booleanParam(
-            name: 'RUN_LOCAL',
-            defaultValue: false,
-            description: 'Run tests locally instead of on BrowserStack (for debugging).'
+            description: 'Run tests in parallel.'
         )
     }
 
@@ -48,8 +42,8 @@ pipeline {
         stage('Clean Workspace') {
             steps {
                 script {
-                    echo "🧹 Cleaning workspace before checkout..."
-                    deleteDir()  // <-- Added: cleans entire workspace for fresh checkout
+                    echo "🧹 Cleaning workspace..."
+                    deleteDir()
                     echo "Workspace cleaned."
                 }
             }
@@ -57,7 +51,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo "🔄 Checking out Demo project..."
+                echo "🔄 Checking out code..."
                 checkout scm
             }
         }
@@ -82,36 +76,10 @@ pipeline {
             }
         }
 
-        stage('Validate BrowserStack Credentials') {
-            when {
-                not { params.RUN_LOCAL }
-            }
-            steps {
-                script {
-                    sh '''
-                        echo "🔍 Validating BrowserStack credentials..."
-                        if [ -z "$BROWSERSTACK_USERNAME" ] || [ -z "$BROWSERSTACK_ACCESS_KEY" ]; then
-                            echo "❌ BrowserStack credentials not found!"
-                            exit 1
-                        fi
-                        
-                        # Test BrowserStack API connection
-                        curl -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \\
-                             https://api.browserstack.com/automate/plan.json \\
-                             -f -s -o /dev/null || {
-                            echo "❌ Failed to connect to BrowserStack API!"
-                            exit 1
-                        }
-                        echo "✅ BrowserStack credentials validated successfully"
-                    '''
-                }
-            }
-        }
-
         stage('Run Tests') {
             steps {
                 script {
-                    // Define which platforms to test
+                    // Select platforms
                     def selectedPlatforms = []
                     if (params.PLATFORM_SET == 'all') {
                         selectedPlatforms = ['chrome_windows', 'firefox_mac', 'samsung_mobile']
@@ -119,70 +87,47 @@ pipeline {
                         selectedPlatforms = [params.PLATFORM_SET]
                     }
                     
+                    // Set test marker
                     def testMarker = ''
                     if (params.TEST_SUITE != 'all') {
                         testMarker = "-m ${params.TEST_SUITE}"
                     }
 
-                    // Determine execution mode
-                    def useBrowserStack = !params.RUN_LOCAL
-                    def buildName = "Demo-Build-${env.BUILD_NUMBER}"
-                    
-                    echo "🚀 Starting tests..."
-                    echo "Platforms: ${selectedPlatforms.join(', ')}"
-                    echo "Test Suite: ${params.TEST_SUITE}"
-                    echo "BrowserStack: ${useBrowserStack ? 'Enabled' : 'Disabled (Local)'}"
-                    echo "Parallel: ${params.PARALLEL_EXECUTION}"
+                    echo "🚀 Running tests on: ${selectedPlatforms.join(', ')}"
 
                     if (params.PARALLEL_EXECUTION && selectedPlatforms.size() > 1) {
+                        // Parallel execution
                         def parallelTests = [:]
                         selectedPlatforms.each { platformKey ->
                             parallelTests[platformKey] = {
-                                def envVars = [
-                                    "BROWSER_TYPE=${platformKey}",
-                                    "USE_BROWSERSTACK=${useBrowserStack}",
-                                    "BUILD_NUMBER=${env.BUILD_NUMBER}",
-                                    "JOB_NAME=${env.JOB_NAME}"
-                                ]
-
-                                withEnv(envVars) {
+                                withEnv(["BROWSER_TYPE=${platformKey}"]) {
                                     sh """
                                         source .venv/bin/activate
                                         mkdir -p reports
-                                        echo "🧪 Running ${platformKey} tests..."
                                         pytest tests/ \\
                                             ${testMarker} \\
                                             --html=reports/demo_report_${platformKey}.html \\
                                             --self-contained-html \\
                                             --junitxml=reports/demo_junit_${platformKey}.xml \\
-                                            -v \\
-                                            --tb=short
+                                            -v
                                     """
                                 }
                             }
                         }
                         parallel parallelTests
                     } else {
+                        // Sequential execution
                         selectedPlatforms.each { platformKey ->
-                            def envVars = [
-                                "BROWSER_TYPE=${platformKey}",
-                                "USE_BROWSERSTACK=${useBrowserStack}",
-                                "BUILD_NUMBER=${env.BUILD_NUMBER}",
-                                "JOB_NAME=${env.JOB_NAME}"
-                            ]
-
-                            withEnv(envVars) {
+                            withEnv(["BROWSER_TYPE=${platformKey}"]) {
                                 sh """
                                     source .venv/bin/activate
                                     mkdir -p reports
-                                    echo "🧪 Running ${platformKey} tests..."
                                     pytest tests/ \\
                                         ${testMarker} \\
                                         --html=reports/demo_report_${platformKey}.html \\
                                         --self-contained-html \\
                                         --junitxml=reports/demo_junit_${platformKey}.xml \\
-                                        -v \\
-                                        --tb=short
+                                        -v
                                 """
                             }
                         }
@@ -191,36 +136,23 @@ pipeline {
             }
         }
 
-        stage('Publish Reports and Archive Artifacts') {
+        stage('Publish Reports') {
             steps {
                 script {
-                    echo "📊 Publishing test reports..."
+                    echo "📊 Publishing reports..."
                     
-                    // Publish JUnit test results
                     junit(
                         testResults: 'reports/demo_junit_*.xml',
                         allowEmptyResults: true
                     )
-                    
-                    // Archive HTML reports
                     archiveArtifacts(
                         artifacts: 'reports/*.html',
                         allowEmptyArchive: true
                     )
-                    
-                    // Archive logs if they exist
-                    archiveArtifacts(
-                        artifacts: 'logs/*.log',
-                        allowEmptyArchive: true
-                    )
-                    
-                    // Archive screenshots if they exist
                     archiveArtifacts(
                         artifacts: 'screenshots/*.png',
                         allowEmptyArchive: true
                     )
-                    
-                    // Publish HTML reports
                     publishHTML([
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
@@ -229,26 +161,6 @@ pipeline {
                         reportFiles: '*.html',
                         reportName: 'Demo Test Reports'
                     ])
-                    
-                    echo "✅ Reports published successfully"
-                }
-            }
-        }
-
-        stage('BrowserStack Session Links') {
-            when {
-                not { params.RUN_LOCAL }
-            }
-            steps {
-                script {
-                    sh '''
-                        echo "🔗 BrowserStack Dashboard Links:"
-                        echo "Build Dashboard: https://automate.browserstack.com/dashboard/v2/builds"
-                        echo "Build Name: Demo-Build-${BUILD_NUMBER}"
-                        echo ""
-                        echo "📱 Individual Session Links:"
-                        echo "Note: Session URLs will be available in test logs with session IDs"
-                    '''
                 }
             }
         }
@@ -256,51 +168,14 @@ pipeline {
 
     post {
         always {
-            script {
-                echo "🏁 Pipeline completed at: ${new Date()}"
-                
-                // Display summary
-                sh '''
-                    echo "📋 Test Execution Summary:"
-                    if [ -d "reports" ]; then
-                        echo "HTML Reports generated: $(ls reports/*.html 2>/dev/null | wc -l)"
-                        echo "JUnit Reports generated: $(ls reports/*.xml 2>/dev/null | wc -l)"
-                    fi
-                    if [ -d "screenshots" ]; then
-                        echo "Screenshots captured: $(ls screenshots/*.png 2>/dev/null | wc -l)"
-                    fi
-                '''
-            }
-            
-            // Clean workspace after build to avoid stale files
+            echo 'Pipeline completed.'
             deleteDir()
         }
         success {
-            echo '✅ Demo tests passed successfully!'
-            script {
-                if (!params.RUN_LOCAL) {
-                    echo "🎉 BrowserStack sessions completed successfully!"
-                    echo "View results at: https://automate.browserstack.com/dashboard/v2/builds"
-                }
-            }
+            echo '✅ Tests passed!'
         }
         failure {
-            echo '❌ Demo tests failed!'
-            script {
-                echo "💡 Troubleshooting tips:"
-                echo "1. Check individual test reports in the artifacts"
-                echo "2. Review screenshots for visual debugging"
-                echo "3. Verify BrowserStack session logs if using BrowserStack"
-                if (!params.RUN_LOCAL) {
-                    echo "4. Check BrowserStack dashboard for session details"
-                }
-            }
-        }
-        aborted {
-            echo '🚫 Demo tests aborted!'
-        }
-        unstable {
-            echo '⚠️  Demo tests completed with some failures!'
+            echo '❌ Tests failed!'
         }
     }
 }

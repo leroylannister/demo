@@ -11,6 +11,16 @@ from selenium.webdriver.chrome.options import Options
 from src.demo.utils.logger import get_logger
 from src.demo.utils.browserstack_api import BrowserStackAPI
 
+# Import driver config at module level to avoid issues
+try:
+    from src.demo.utils.browserstack_driver_config import BrowserStackDriverConfig, BROWSER_CONFIGS
+    DRIVER_CONFIG_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: BrowserStack driver config not available: {e}")
+    DRIVER_CONFIG_AVAILABLE = False
+    BrowserStackDriverConfig = None
+    BROWSER_CONFIGS = {}
+
 
 class TestBase:
     """Base test class with common functionality for Demo tests and BrowserStack integration."""
@@ -22,6 +32,7 @@ class TestBase:
     test_passed = False
     test_failed = False
     failure_reason = None
+    is_browserstack_session = False  # Track session type
     
     @pytest.fixture(autouse=True)
     def setup_method(self, driver):
@@ -35,13 +46,20 @@ class TestBase:
         # Capture session ID for BrowserStack status reporting
         if self.driver and hasattr(self.driver, 'session_id'):
             self.session_id = self.driver.session_id
-            self.logger.info(f"[Demo] BrowserStack session ID: {self.session_id}")
+            self.logger.info(f"[Demo] Session ID: {self.session_id}")
             
-            # Verify session is accessible on BrowserStack
-            if self.browserstack_api.wait_for_session(self.session_id, max_wait=15):
-                self.logger.info(f"[Demo] Session {self.session_id} confirmed on BrowserStack")
+            # Check if this is a BrowserStack session
+            self.is_browserstack_session = self._is_browserstack_session(self.driver)
+            
+            if self.is_browserstack_session:
+                self.logger.info(f"[Demo] BrowserStack session detected")
+                # Verify session is accessible on BrowserStack
+                if self.browserstack_api.wait_for_session(self.session_id, max_wait=15):
+                    self.logger.info(f"[Demo] Session {self.session_id} confirmed on BrowserStack")
+                else:
+                    self.logger.warning(f"[Demo] Session {self.session_id} not yet visible on BrowserStack")
             else:
-                self.logger.warning(f"[Demo] Session {self.session_id} not yet visible on BrowserStack")
+                self.logger.info(f"[Demo] Local Chrome session - BrowserStack reporting disabled")
         
         # Reset test status
         self.test_passed = False
@@ -51,24 +69,31 @@ class TestBase:
     @pytest.fixture(scope="function")
     def driver(self):
         """Setup driver - BrowserStack if credentials available, local Chrome otherwise."""
-        from src.demo.utils.browserstack_driver_config import BrowserStackDriverConfig, BROWSER_CONFIGS
         
-        # Determine browser config from environment or default to chrome_windows
-        browser_type = os.getenv('BROWSER_TYPE', 'chrome_windows')
-        browser_config = BROWSER_CONFIGS.get(browser_type, BROWSER_CONFIGS['chrome_windows'])
-        
-        if BrowserStackDriverConfig.should_use_browserstack():
-            self.logger.info(f"[Demo] Creating BrowserStack driver for {browser_type}")
-            try:
-                driver = BrowserStackDriverConfig.create_browserstack_driver(browser_config)
-                self.logger.info(f"[Demo] ✅ BrowserStack driver created successfully")
-            except Exception as e:
-                self.logger.error(f"[Demo] Failed to create BrowserStack driver: {e}")
-                self.logger.info(f"[Demo] Falling back to local Chrome driver")
-                driver = self._create_local_chrome_driver()
-        else:
-            self.logger.info(f"[Demo] Creating local Chrome driver (BrowserStack not configured)")
+        # Check if driver config is available
+        if not DRIVER_CONFIG_AVAILABLE:
+            print("[Demo] BrowserStack driver config not available, using local Chrome")
             driver = self._create_local_chrome_driver()
+        else:
+            # Determine browser config from environment or default to chrome_windows
+            browser_type = os.getenv('BROWSER_TYPE', 'chrome_windows')
+            browser_config = BROWSER_CONFIGS.get(browser_type, BROWSER_CONFIGS['chrome_windows'])
+            
+            print(f"[Demo] Browser type: {browser_type}")
+            print(f"[Demo] Browser config: {browser_config}")
+            
+            if BrowserStackDriverConfig.should_use_browserstack():
+                print(f"[Demo] Creating BrowserStack driver for {browser_type}")
+                try:
+                    driver = BrowserStackDriverConfig.create_browserstack_driver(browser_config)
+                    print(f"[Demo] ✅ BrowserStack driver created successfully")
+                except Exception as e:
+                    print(f"[Demo] Failed to create BrowserStack driver: {e}")
+                    print(f"[Demo] Falling back to local Chrome driver")
+                    driver = self._create_local_chrome_driver()
+            else:
+                print(f"[Demo] Creating local Chrome driver (BrowserStack not configured)")
+                driver = self._create_local_chrome_driver()
         
         yield driver
         
@@ -116,8 +141,8 @@ class TestBase:
             self.logger.warning("[Demo] Cannot update BrowserStack status - missing API or session ID")
             return
         
-        # Check if this is actually a BrowserStack session
-        if not self._is_browserstack_session(driver):
+        # Check if this is actually a BrowserStack session using cached value
+        if not self.is_browserstack_session:
             self.logger.info("[Demo] Local driver session - skipping BrowserStack status update")
             return
         
@@ -178,7 +203,10 @@ class TestBase:
             return False
             
         except Exception as e:
-            self.logger.warning(f"[Demo] Could not determine if session is BrowserStack: {e}")
+            if hasattr(self, 'logger') and self.logger:
+                self.logger.warning(f"[Demo] Could not determine if session is BrowserStack: {e}")
+            else:
+                print(f"[Demo] Could not determine if session is BrowserStack: {e}")
             return False
     
     def _get_test_result(self):
@@ -223,8 +251,8 @@ class TestBase:
         self.test_failed = False
         self.logger.info(f"[Demo] Marked test as PASSED: {reason}")
         
-        # Immediate update if session is available
-        if self.session_id and self.browserstack_api:
+        # Immediate update if session is available and it's a BrowserStack session
+        if (self.session_id and self.browserstack_api and self.is_browserstack_session):
             success = self.browserstack_api.update_session_status(self.session_id, "passed", reason)
             if not success:
                 self.logger.warning(f"[Demo] Failed to immediately update BrowserStack status, will retry in teardown")
@@ -236,8 +264,8 @@ class TestBase:
         self.failure_reason = reason
         self.logger.error(f"[Demo] Marked test as FAILED: {reason}")
         
-        # Immediate update if session is available
-        if self.session_id and self.browserstack_api:
+        # Immediate update if session is available and it's a BrowserStack session
+        if (self.session_id and self.browserstack_api and self.is_browserstack_session):
             success = self.browserstack_api.update_session_status(self.session_id, "failed", reason)
             if not success:
                 self.logger.warning(f"[Demo] Failed to immediately update BrowserStack status, will retry in teardown")
@@ -264,7 +292,7 @@ class TestBase:
     
     def get_session_details(self):
         """Get current session details from BrowserStack."""
-        if not self.session_id or not self.browserstack_api:
+        if not self.session_id or not self.browserstack_api or not self.is_browserstack_session:
             return None
         
         details = self.browserstack_api.get_session_details(self.session_id)
