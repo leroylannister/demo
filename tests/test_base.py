@@ -21,6 +21,20 @@ except ImportError as e:
     BrowserStackDriverConfig = None
     BROWSER_CONFIGS = {}
 
+# Add this RIGHT AFTER your imports, before the class definition:
+print("=== BROWSERSTACK DEBUG ===")
+print(f"BROWSERSTACK_USERNAME: {bool(os.getenv('BROWSERSTACK_USERNAME'))}")
+print(f"BROWSERSTACK_ACCESS_KEY: {bool(os.getenv('BROWSERSTACK_ACCESS_KEY'))}")
+print(f"DRIVER_CONFIG_AVAILABLE: {DRIVER_CONFIG_AVAILABLE}")
+try:
+    if DRIVER_CONFIG_AVAILABLE:
+        print(f"should_use_browserstack(): {BrowserStackDriverConfig.should_use_browserstack()}")
+    else:
+        print("Cannot call should_use_browserstack() - driver config not available")
+except Exception as e:
+    print(f"Error calling should_use_browserstack(): {e}")
+print("=== END DEBUG ===")
+
 
 class TestBase:
     """Base test class with common functionality for Demo tests and BrowserStack integration."""
