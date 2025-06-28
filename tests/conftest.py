@@ -49,7 +49,7 @@ def driver(request):
             options.set_capability('browserName', 'chrome')
         elif browser_type == 'firefox_mac':
             bstack_options['os'] = 'OS X'
-            bstack_options['osVersion'] = 'Monterey'
+            bstack_options['osVersion'] = 'Ventura'
             options.set_capability('browserName', 'Firefox')
             options.set_capability('browserVersion', 'latest')
         else:  # chrome_windows
