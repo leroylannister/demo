@@ -13,44 +13,66 @@ def pytest_configure(config):
 @pytest.fixture
 def driver(request):
     """Setup and teardown driver for Demo tests."""
-    # Check if we're running on BrowserStack via environment variables
-    if os.environ.get('BS_BROWSER') or os.environ.get('BS_DEVICE'):
-        # --- BrowserStack execution (unchanged) ---
-        username = os.environ.get('BROWSERSTACK_USERNAME')
-        access_key = os.environ.get('BROWSERSTACK_ACCESS_KEY')
+    
+    # Debug what we have
+    print(f"=== CONFTEST DEBUG ===")
+    print(f"BROWSERSTACK_USERNAME: {bool(os.environ.get('BROWSERSTACK_USERNAME'))}")
+    print(f"BROWSERSTACK_ACCESS_KEY: {bool(os.environ.get('BROWSERSTACK_ACCESS_KEY'))}")
+    print(f"BROWSER_TYPE: {os.environ.get('BROWSER_TYPE', 'not-set')}")
+    print(f"BS_BROWSER: {os.environ.get('BS_BROWSER', 'not-set')}")
+    print(f"BS_DEVICE: {os.environ.get('BS_DEVICE', 'not-set')}")
+    
+    # Check for BrowserStack credentials
+    username = os.environ.get('BROWSERSTACK_USERNAME')
+    access_key = os.environ.get('BROWSERSTACK_ACCESS_KEY')
+    browser_type = os.environ.get('BROWSER_TYPE', 'chrome_windows')
+    
+    # Use BrowserStack if credentials are available
+    if username and access_key:
+        print(f"=== USING BROWSERSTACK for {browser_type} ===")
         
         options = ChromeOptions()
         bstack_options = {
-            'buildName': os.environ.get('BROWSERSTACK_BUILD_NAME', 'Demo Build'),
-            'sessionName': f'Demo - {request.node.name}',
+            'buildName': f"Demo-Build-{os.environ.get('BUILD_NUMBER', 'local')}",
+            'sessionName': f'Demo-{browser_type}-{request.node.name}',
             'local': 'false',
-            'debug': 'true'
+            'debug': 'true',
+            'consoleLogs': 'info',
+            'networkLogs': 'true'
         }
         
-        if os.environ.get('BS_DEVICE'):
-            bstack_options['deviceName'] = os.environ.get('BS_DEVICE')
-            bstack_options['osVersion'] = os.environ.get('BS_PLATFORM_VERSION')
+        # Configure based on browser type
+        if browser_type == 'samsung_mobile':
+            bstack_options['deviceName'] = 'Samsung Galaxy S20'
+            bstack_options['osVersion'] = '10.0'
             bstack_options['realMobile'] = 'true'
-        else:
-            bstack_options['os'] = os.environ.get('BS_OS', 'Windows')
-            bstack_options['osVersion'] = os.environ.get('BS_OS_VERSION', '10')
+            options.set_capability('browserName', 'chrome')
+        elif browser_type == 'firefox_mac':
+            bstack_options['os'] = 'OS X'
+            bstack_options['osVersion'] = 'Monterey'
+            options.set_capability('browserName', 'Firefox')
+            options.set_capability('browserVersion', 'latest')
+        else:  # chrome_windows
+            bstack_options['os'] = 'Windows'
+            bstack_options['osVersion'] = '10'
+            options.set_capability('browserName', 'Chrome')
+            options.set_capability('browserVersion', 'latest')
         
         options.set_capability('bstack:options', bstack_options)
+        
+        print(f"Connecting to BrowserStack with: {bstack_options}")
         
         driver = webdriver.Remote(
             command_executor=f'https://{username}:{access_key}@hub-cloud.browserstack.com/wd/hub',
             options=options
         )
+        
+        print(f"✅ BrowserStack driver created: {driver.session_id}")
     else:
-        # --- START: Applied Local Chrome Fixes ---
-        # Local Chrome driver setup with robust options
+        print("=== USING LOCAL CHROME (no BrowserStack credentials) ===")
+        # Local Chrome driver setup
         options = ChromeOptions()
-        
-        ### <<< KEY FIX HERE
-        # This argument is essential for Chrome v111+ to allow WebDriver to connect.
         options.add_argument("--remote-allow-origins=*")
-        
-        # Best-practice options for stability and to avoid detection
         options.add_argument("--start-maximized")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
@@ -58,8 +80,7 @@ def driver(request):
         options.add_experimental_option('useAutomationExtension', False)
         
         driver = webdriver.Chrome(options=options)
-        # --- END: Applied Local Chrome Fixes ---
+        print(f"Local Chrome driver created: {driver.session_id}")
     
     yield driver
     driver.quit()
-
