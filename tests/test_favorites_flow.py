@@ -2,12 +2,21 @@
 
 import pytest
 import time
+import sys
+import importlib
+
+# Force reload of test_base module to ensure latest changes
+if 'tests.test_base' in sys.modules:
+    importlib.reload(sys.modules['tests.test_base'])
 
 from tests.test_base import TestBase
 from src.demo.pages.login_page import LoginPage
 from src.demo.pages.products_page import ProductsPage
 from src.demo.pages.favorites_page import FavoritesPage
 from selenium.webdriver.common.by import By
+
+# Debug the import
+print(f"=== IMPORT DEBUG === TestBase imported from: {TestBase.__module__}")
 
 
 class TestDemoFavoritesFlow(TestBase):
