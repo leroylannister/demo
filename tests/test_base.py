@@ -70,11 +70,19 @@ class TestBase:
     def driver(self):
         """Setup driver - BrowserStack if credentials available, local Chrome otherwise."""
         
+        # ADD DEBUG LINES:
+        print(f"[DEBUG] BROWSERSTACK_USERNAME exists: {bool(os.getenv('BROWSERSTACK_USERNAME'))}")
+        print(f"[DEBUG] BROWSERSTACK_ACCESS_KEY exists: {bool(os.getenv('BROWSERSTACK_ACCESS_KEY'))}")
+        print(f"[DEBUG] DRIVER_CONFIG_AVAILABLE: {DRIVER_CONFIG_AVAILABLE}")
+        
         # Check if driver config is available
         if not DRIVER_CONFIG_AVAILABLE:
             print("[Demo] BrowserStack driver config not available, using local Chrome")
             driver = self._create_local_chrome_driver()
         else:
+            # ADD MORE DEBUG:
+            print(f"[DEBUG] should_use_browserstack(): {BrowserStackDriverConfig.should_use_browserstack()}")
+            
             # Determine browser config from environment or default to chrome_windows
             browser_type = os.getenv('BROWSER_TYPE', 'chrome_windows')
             browser_config = BROWSER_CONFIGS.get(browser_type, BROWSER_CONFIGS['chrome_windows'])
