@@ -3,7 +3,6 @@ userName: "YOUR_USERNAME"
 accessKey: "YOUR_ACCESS_KEY"
 buildName: "Demo Favorites Test"
 projectName: "Technical Challenge"
-testObservability: true
 
 # Platform configurations - Reduced to the three required environments
 platforms:
@@ -11,28 +10,25 @@ platforms:
     browserVersion: latest
     os: Windows
     osVersion: "10"
-    sessionName: "Chrome on Windows 10 - Favorites Test"
+    sessionName: "Chrome on Windows 10"
     
   - browserName: Firefox
     browserVersion: latest
     os: OS X
     osVersion: Ventura
-    sessionName: "Firefox on macOS Ventura - Favorites Test"
+    sessionName: "Firefox on macOS Ventura"
     
   - deviceName: Samsung Galaxy S22
     platformName: Android
     platformVersion: "12.0"
-    sessionName: "Samsung Galaxy S22 - Favorites Test"
+    sessionName: "Samsung Galaxy S22"
 
 # Test configuration
 parallelsPerPlatform: 1
-browserstackLocal: false  # Changed to false since you're testing public site
+browserstackLocal: true
 debug: true
 consoleLogs: info
 networkLogs: true
-video: true  # Added to capture test execution videos
-screenshots: true  # Added to capture automatic screenshots
 
 # Timeouts
 idleTimeout: 300
-commandTimeout: 600  # Added command timeout for better reliability
