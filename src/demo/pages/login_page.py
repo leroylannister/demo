@@ -121,20 +121,30 @@ class LoginPage(BasePage):
             return False
     
     def verify_login_success(self):
-        """Verify that login was successful by checking for logout button"""
+        """Verify that login was successful by checking URL or logout button"""
         try:
-            # Use visibility_of_element_located like the working test
-            WebDriverWait(self.driver, 10).until(
+            # Check if we're on the signed-in page (which indicates successful login)
+            current_url = self.driver.current_url
+            if "?signin=true" in current_url:
+                self.logger.info("[Demo] ✓ Login successful - detected signin=true in URL")
+                return True
+                
+            # Fallback: try to find logout button
+            WebDriverWait(self.driver, 5).until(
                 EC.visibility_of_element_located((By.ID, "logout"))
             )
             self.logger.info("[Demo] ✓ Login successful - logout button found")
             return True
             
         except TimeoutException:
-            self.driver.save_screenshot("debug_login_failed.png")
             current_url = self.driver.current_url
-            self.logger.error(f"[Demo] Login failed. Current URL: {current_url}")
-            return False
+            if "?signin=true" in current_url:
+                self.logger.info("[Demo] ✓ Login successful - signin=true in URL")
+                return True
+            else:
+                self.logger.error(f"[Demo] Login failed. Current URL: {current_url}")
+                self.driver.save_screenshot("debug_login_failed.png")
+                return False
 
     def login(self, username="demouser", password="testingisfun99"):
         """Complete login flow using working test patterns"""

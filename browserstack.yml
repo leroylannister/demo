@@ -11,25 +11,28 @@ platforms:
     browserVersion: latest
     os: Windows
     osVersion: "10"
-    sessionName: "Chrome on Windows 10"
+    sessionName: "Chrome on Windows 10 - Favorites Test"
     
   - browserName: Firefox
     browserVersion: latest
     os: OS X
-    osVersion: Ventura # Updated from Sonoma to Ventura as requested
-    sessionName: "Firefox on macOS Ventura"
+    osVersion: Ventura
+    sessionName: "Firefox on macOS Ventura - Favorites Test"
     
   - deviceName: Samsung Galaxy S22
     platformName: Android
     platformVersion: "12.0"
-    sessionName: "Samsung Galaxy S22"
+    sessionName: "Samsung Galaxy S22 - Favorites Test"
 
 # Test configuration
 parallelsPerPlatform: 1
-browserstackLocal: true
+browserstackLocal: false  # Changed to false since you're testing public site
 debug: true
 consoleLogs: info
 networkLogs: true
+video: true  # Added to capture test execution videos
+screenshots: true  # Added to capture automatic screenshots
 
 # Timeouts
 idleTimeout: 300
+commandTimeout: 600  # Added command timeout for better reliability
