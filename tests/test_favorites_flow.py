@@ -9,7 +9,7 @@ import importlib
 if 'tests.test_base' in sys.modules:
     importlib.reload(sys.modules['tests.test_base'])
 
-from tests.test_base import TestBase
+from test_base import TestBase
 from src.demo.pages.login_page import LoginPage
 from src.demo.pages.products_page import ProductsPage
 from src.demo.pages.favorites_page import FavoritesPage
