@@ -1,0 +1,32 @@
+[Demo] 01:10:32 - Demo.TestDemoFavoritesFlow - INFO - [Demo] BrowserStack session ID: 3d8cf6fd696bfb8fb135eebd42e9454f
+[Demo] 01:10:32 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 1: Logging into BStackDemo
+[Demo] 01:10:32 - Demo.LoginPage - INFO - [Demo] Starting login process...
+[Demo] 01:10:32 - Demo.LoginPage - INFO - [Demo] Navigating to bstackdemo.com...
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] Page loaded successfully
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] Looking for Sign In button...
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] ✓ Clicked Sign In button
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] ✓ Login modal opened successfully
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] Selecting username and password...
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] ✓ Clicked username field
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] ✓ Selected username
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] ✓ Clicked password field
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] ✓ Selected password
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] Clicking Login button...
+[Demo] 01:10:34 - Demo.LoginPage - INFO - [Demo] ✓ Clicked Login button
+[Demo] 01:10:45 - Demo.LoginPage - ERROR - [Demo] Login failed. Current URL: https://bstackdemo.com/?signin=true
+[Demo] 01:10:45 - Demo.LoginPage - WARNING - [Demo] ⚠️ Login may have failed
+[Demo] 01:10:45 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 2: Filtering products by Samsung
+[Demo] 01:10:45 - Demo.ProductsPage - INFO - [Demo] Filtering products by Samsung
+[Demo] 01:10:47 - Demo.ProductsPage - INFO - [Demo] Samsung filter applied
+[Demo] 01:10:47 - Demo.TestDemoFavoritesFlow - INFO - [Demo] ✓ Samsung filter applied successfully
+[Demo] 01:10:47 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 3: Adding Galaxy S20+ to favorites
+[Demo] 01:10:47 - Demo.ProductsPage - INFO - [Demo] Adding Galaxy S20+ to favorites
+[Demo] 01:10:48 - Demo.ProductsPage - INFO - [Demo] Executing JavaScript click for Galaxy S20+ favorite button.
+[Demo] 01:10:49 - Demo.ProductsPage - INFO - [Demo] Galaxy S20+ added to favorites
+[Demo] 01:10:49 - Demo.TestDemoFavoritesFlow - INFO - [Demo] ✓ Clicked favorite icon
+[Demo] 01:10:49 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 4: Navigating to favorites page
+[Demo] 01:10:49 - Demo.ProductsPage - INFO - [Demo] Navigating to favorites page
+[Demo] 01:10:51 - Demo.ProductsPage - INFO - [Demo] Navigated to favorites page
+[Demo] 01:10:51 - Demo.TestDemoFavoritesFlow - INFO - [Demo] ✅ Successfully verified Galaxy S20+ in favorites
+[Demo] 01:10:51 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Screenshot saved: screenshots/demo_demo_test_success_favorites_added.png
+[Demo] 01:10:51 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Marked test as PASSED: Samsung device successfully added to favorites
