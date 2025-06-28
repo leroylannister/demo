@@ -13,6 +13,7 @@ pipeline {
         TEST_USERNAME = credentials('test-username')
         TEST_PASSWORD = credentials('test-password')
         PATH = "${env.HOME}/.local/bin:${env.HOME}/.cargo/bin:${env.PATH}"
+        USE_BROWSERSTACK = 'true'  // Enable BrowserStack by default
     }
 
     parameters {
@@ -35,6 +36,11 @@ pipeline {
             name: 'PARALLEL_EXECUTION',
             defaultValue: true,
             description: 'Run tests for selected platforms in parallel.'
+        )
+        booleanParam(
+            name: 'RUN_LOCAL',
+            defaultValue: false,
+            description: 'Run tests locally instead of on BrowserStack (for debugging).'
         )
     }
 
@@ -76,32 +82,39 @@ pipeline {
             }
         }
 
+        stage('Validate BrowserStack Credentials') {
+            when {
+                not { params.RUN_LOCAL }
+            }
+            steps {
+                script {
+                    sh '''
+                        echo "🔍 Validating BrowserStack credentials..."
+                        if [ -z "$BROWSERSTACK_USERNAME" ] || [ -z "$BROWSERSTACK_ACCESS_KEY" ]; then
+                            echo "❌ BrowserStack credentials not found!"
+                            exit 1
+                        fi
+                        
+                        # Test BrowserStack API connection
+                        curl -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \\
+                             https://api.browserstack.com/automate/plan.json \\
+                             -f -s -o /dev/null || {
+                            echo "❌ Failed to connect to BrowserStack API!"
+                            exit 1
+                        }
+                        echo "✅ BrowserStack credentials validated successfully"
+                    '''
+                }
+            }
+        }
+
         stage('Run Tests') {
             steps {
                 script {
-                    def platformConfigs = [
-                        'chrome_windows': [
-                            browser: 'Chrome',
-                            browser_version: 'latest',
-                            os: 'Windows',
-                            os_version: '10'
-                        ],
-                        'firefox_mac': [
-                            browser: 'Firefox',
-                            browser_version: 'latest',
-                            os: 'OS X',
-                            os_version: 'Ventura'
-                        ],                 
-                        'samsung_mobile': [
-                            device: 'Samsung Galaxy S22',
-                            platform_name: 'Android',
-                            platform_version: '12.0'
-                        ],
-                    ]
-
+                    // Define which platforms to test
                     def selectedPlatforms = []
                     if (params.PLATFORM_SET == 'all') {
-                        selectedPlatforms = platformConfigs.keySet().toList()
+                        selectedPlatforms = ['chrome_windows', 'firefox_mac', 'samsung_mobile']
                     } else {
                         selectedPlatforms = [params.PLATFORM_SET]
                     }
@@ -111,37 +124,39 @@ pipeline {
                         testMarker = "-m ${params.TEST_SUITE}"
                     }
 
+                    // Determine execution mode
+                    def useBrowserStack = !params.RUN_LOCAL
+                    def buildName = "Demo-Build-${env.BUILD_NUMBER}"
+                    
+                    echo "🚀 Starting tests..."
+                    echo "Platforms: ${selectedPlatforms.join(', ')}"
+                    echo "Test Suite: ${params.TEST_SUITE}"
+                    echo "BrowserStack: ${useBrowserStack ? 'Enabled' : 'Disabled (Local)'}"
+                    echo "Parallel: ${params.PARALLEL_EXECUTION}"
+
                     if (params.PARALLEL_EXECUTION && selectedPlatforms.size() > 1) {
                         def parallelTests = [:]
                         selectedPlatforms.each { platformKey ->
                             parallelTests[platformKey] = {
-                                def config = platformConfigs[platformKey]
                                 def envVars = [
-                                    "BROWSERSTACK_BUILD_NAME=Demo-Build-${env.BUILD_NUMBER}",
-                                    "BROWSERSTACK_PROJECT_NAME=Demo-Project",
-                                    "BROWSERSTACK_SESSION_NAME=${platformKey}-${env.BUILD_NUMBER}"
+                                    "BROWSER_TYPE=${platformKey}",
+                                    "USE_BROWSERSTACK=${useBrowserStack}",
+                                    "BUILD_NUMBER=${env.BUILD_NUMBER}",
+                                    "JOB_NAME=${env.JOB_NAME}"
                                 ]
-                                if (config.browser) {
-                                    envVars.add("BS_BROWSER=${config.browser}")
-                                    envVars.add("BS_BROWSER_VERSION=${config.browser_version}")
-                                    envVars.add("BS_OS=${config.os}")
-                                    envVars.add("BS_OS_VERSION=${config.os_version}")
-                                } else if (config.device) {
-                                    envVars.add("BS_DEVICE=${config.device}")
-                                    envVars.add("BS_PLATFORM_NAME=${config.platform_name}")
-                                    envVars.add("BS_PLATFORM_VERSION=${config.platform_version}")
-                                }
 
                                 withEnv(envVars) {
                                     sh """
                                         source .venv/bin/activate
                                         mkdir -p reports
+                                        echo "🧪 Running ${platformKey} tests..."
                                         pytest tests/ \\
                                             ${testMarker} \\
                                             --html=reports/demo_report_${platformKey}.html \\
                                             --self-contained-html \\
                                             --junitxml=reports/demo_junit_${platformKey}.xml \\
-                                            -v
+                                            -v \\
+                                            --tb=short
                                     """
                                 }
                             }
@@ -149,33 +164,25 @@ pipeline {
                         parallel parallelTests
                     } else {
                         selectedPlatforms.each { platformKey ->
-                            def config = platformConfigs[platformKey]
                             def envVars = [
-                                "BROWSERSTACK_BUILD_NAME=Demo-Build-${env.BUILD_NUMBER}",
-                                "BROWSERSTACK_PROJECT_NAME=Demo-Project",
-                                "BROWSERSTACK_SESSION_NAME=${platformKey}-${env.BUILD_NUMBER}"
+                                "BROWSER_TYPE=${platformKey}",
+                                "USE_BROWSERSTACK=${useBrowserStack}",
+                                "BUILD_NUMBER=${env.BUILD_NUMBER}",
+                                "JOB_NAME=${env.JOB_NAME}"
                             ]
-                            if (config.browser) {
-                                envVars.add("BS_BROWSER=${config.browser}")
-                                envVars.add("BS_BROWSER_VERSION=${config.browser_version}")
-                                envVars.add("BS_OS=${config.os}")
-                                envVars.add("BS_OS_VERSION=${config.os_version}")
-                            } else if (config.device) {
-                                envVars.add("BS_DEVICE=${config.device}")
-                                envVars.add("BS_PLATFORM_NAME=${config.platform_name}")
-                                envVars.add("BS_PLATFORM_VERSION=${config.platform_version}")
-                            }
 
                             withEnv(envVars) {
                                 sh """
                                     source .venv/bin/activate
                                     mkdir -p reports
+                                    echo "🧪 Running ${platformKey} tests..."
                                     pytest tests/ \\
                                         ${testMarker} \\
                                         --html=reports/demo_report_${platformKey}.html \\
                                         --self-contained-html \\
                                         --junitxml=reports/demo_junit_${platformKey}.xml \\
-                                        -v
+                                        -v \\
+                                        --tb=short
                                 """
                             }
                         }
@@ -187,22 +194,33 @@ pipeline {
         stage('Publish Reports and Archive Artifacts') {
             steps {
                 script {
+                    echo "📊 Publishing test reports..."
+                    
+                    // Publish JUnit test results
                     junit(
                         testResults: 'reports/demo_junit_*.xml',
                         allowEmptyResults: true
                     )
+                    
+                    // Archive HTML reports
                     archiveArtifacts(
                         artifacts: 'reports/*.html',
                         allowEmptyArchive: true
                     )
+                    
+                    // Archive logs if they exist
                     archiveArtifacts(
                         artifacts: 'logs/*.log',
                         allowEmptyArchive: true
                     )
+                    
+                    // Archive screenshots if they exist
                     archiveArtifacts(
                         artifacts: 'screenshots/*.png',
                         allowEmptyArchive: true
                     )
+                    
+                    // Publish HTML reports
                     publishHTML([
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
@@ -211,6 +229,26 @@ pipeline {
                         reportFiles: '*.html',
                         reportName: 'Demo Test Reports'
                     ])
+                    
+                    echo "✅ Reports published successfully"
+                }
+            }
+        }
+
+        stage('BrowserStack Session Links') {
+            when {
+                not { params.RUN_LOCAL }
+            }
+            steps {
+                script {
+                    sh '''
+                        echo "🔗 BrowserStack Dashboard Links:"
+                        echo "Build Dashboard: https://automate.browserstack.com/dashboard/v2/builds"
+                        echo "Build Name: Demo-Build-${BUILD_NUMBER}"
+                        echo ""
+                        echo "📱 Individual Session Links:"
+                        echo "Note: Session URLs will be available in test logs with session IDs"
+                    '''
                 }
             }
         }
@@ -218,19 +256,51 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline run has completed.'
+            script {
+                echo "🏁 Pipeline completed at: ${new Date()}"
+                
+                // Display summary
+                sh '''
+                    echo "📋 Test Execution Summary:"
+                    if [ -d "reports" ]; then
+                        echo "HTML Reports generated: $(ls reports/*.html 2>/dev/null | wc -l)"
+                        echo "JUnit Reports generated: $(ls reports/*.xml 2>/dev/null | wc -l)"
+                    fi
+                    if [ -d "screenshots" ]; then
+                        echo "Screenshots captured: $(ls screenshots/*.png 2>/dev/null | wc -l)"
+                    fi
+                '''
+            }
+            
             // Clean workspace after build to avoid stale files
             deleteDir()
         }
         success {
             echo '✅ Demo tests passed successfully!'
+            script {
+                if (!params.RUN_LOCAL) {
+                    echo "🎉 BrowserStack sessions completed successfully!"
+                    echo "View results at: https://automate.browserstack.com/dashboard/v2/builds"
+                }
+            }
         }
         failure {
             echo '❌ Demo tests failed!'
-            // You can add notifications here if needed
+            script {
+                echo "💡 Troubleshooting tips:"
+                echo "1. Check individual test reports in the artifacts"
+                echo "2. Review screenshots for visual debugging"
+                echo "3. Verify BrowserStack session logs if using BrowserStack"
+                if (!params.RUN_LOCAL) {
+                    echo "4. Check BrowserStack dashboard for session details"
+                }
+            }
         }
         aborted {
             echo '🚫 Demo tests aborted!'
+        }
+        unstable {
+            echo '⚠️  Demo tests completed with some failures!'
         }
     }
 }

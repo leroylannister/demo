@@ -50,7 +50,36 @@ class TestBase:
     
     @pytest.fixture(scope="function")
     def driver(self):
-        """Setup Chrome driver with proper options for modern web apps."""
+        """Setup driver - BrowserStack if credentials available, local Chrome otherwise."""
+        from src.demo.utils.browserstack_driver_config import BrowserStackDriverConfig, BROWSER_CONFIGS
+        
+        # Determine browser config from environment or default to chrome_windows
+        browser_type = os.getenv('BROWSER_TYPE', 'chrome_windows')
+        browser_config = BROWSER_CONFIGS.get(browser_type, BROWSER_CONFIGS['chrome_windows'])
+        
+        if BrowserStackDriverConfig.should_use_browserstack():
+            self.logger.info(f"[Demo] Creating BrowserStack driver for {browser_type}")
+            try:
+                driver = BrowserStackDriverConfig.create_browserstack_driver(browser_config)
+                self.logger.info(f"[Demo] ✅ BrowserStack driver created successfully")
+            except Exception as e:
+                self.logger.error(f"[Demo] Failed to create BrowserStack driver: {e}")
+                self.logger.info(f"[Demo] Falling back to local Chrome driver")
+                driver = self._create_local_chrome_driver()
+        else:
+            self.logger.info(f"[Demo] Creating local Chrome driver (BrowserStack not configured)")
+            driver = self._create_local_chrome_driver()
+        
+        yield driver
+        
+        # Update BrowserStack session status before cleanup
+        self._update_browserstack_status(driver)
+        
+        # Cleanup
+        driver.quit()
+    
+    def _create_local_chrome_driver(self):
+        """Create a local Chrome driver for testing."""
         chrome_options = Options()
         
         # Essential options to fix blank page issues
@@ -79,18 +108,17 @@ class TestBase:
         # Set implicit wait
         driver.implicitly_wait(10)
         
-        yield driver
-        
-        # Update BrowserStack session status before cleanup
-        self._update_browserstack_status(driver)
-        
-        # Cleanup
-        driver.quit()
+        return driver
     
     def _update_browserstack_status(self, driver):
         """Update BrowserStack session status based on test outcome."""
         if not self.browserstack_api or not hasattr(driver, 'session_id'):
             self.logger.warning("[Demo] Cannot update BrowserStack status - missing API or session ID")
+            return
+        
+        # Check if this is actually a BrowserStack session
+        if not self._is_browserstack_session(driver):
+            self.logger.info("[Demo] Local driver session - skipping BrowserStack status update")
             return
         
         session_id = driver.session_id
@@ -122,6 +150,36 @@ class TestBase:
                 self.logger.info(f"[Demo] ❌ BrowserStack session marked as FAILED")
             else:
                 self.logger.error(f"[Demo] ❌ Failed to update BrowserStack session status")
+    
+    def _is_browserstack_session(self, driver):
+        """Check if the driver is running on BrowserStack."""
+        try:
+            # BrowserStack sessions have specific capabilities
+            capabilities = driver.capabilities
+            
+            # Check for BrowserStack-specific capability keys
+            browserstack_indicators = [
+                'browserstack.user',
+                'browserstack.key', 
+                'bstack:options',
+                'browserstack:options'
+            ]
+            
+            for indicator in browserstack_indicators:
+                if indicator in capabilities:
+                    return True
+                    
+            # Check if the session URL contains browserstack
+            if hasattr(driver, 'command_executor') and driver.command_executor:
+                executor_url = str(driver.command_executor.remote_server_addr)
+                if 'browserstack' in executor_url.lower():
+                    return True
+                    
+            return False
+            
+        except Exception as e:
+            self.logger.warning(f"[Demo] Could not determine if session is BrowserStack: {e}")
+            return False
     
     def _get_test_result(self):
         """Determine if the test passed or failed with improved logic."""
