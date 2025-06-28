@@ -293,7 +293,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "requests", specifier = ">=2.31.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.8" },
-    { name = "selenium", specifier = ">=4.16.0" },
+    { name = "selenium", specifier = ">=4.33.0" },
 ]
 provides-extras = ["dev"]
 
