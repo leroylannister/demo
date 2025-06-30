@@ -1,112 +1,99 @@
-"""Base page class for Demo test suite."""
+"""Base page class for all page objects."""
 
-from typing import Tuple, Optional
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+import logging
 
 from ..config.config import Config
-from ..utils.logger import get_logger
+
+logger = logging.getLogger(__name__)
 
 
 class BasePage:
-    """Base page class with common functionality for Demo tests."""
+    """Base class for all page objects."""
     
-    def __init__(self, driver: WebDriver) -> None:
-        """Initialize base page for Demo."""
+    def __init__(self, driver):
         self.driver = driver
-        self.logger = get_logger(f"Demo.{self.__class__.__name__}")
-        self.wait = WebDriverWait(driver, Config.DEFAULT_TIMEOUT)
+        self.wait = WebDriverWait(driver, Config.EXPLICIT_WAIT)
     
-    def navigate_to(self, url: str) -> None:
-        """Navigate to specified URL."""
-        self.logger.info(f"[Demo] Navigating to: {url}")
+    def navigate_to(self, url: str = None):
+        """Navigate to specified URL or base URL."""
+        url = url or Config.BASE_URL
+        logger.info(f"Navigating to: {url}")
         self.driver.get(url)
     
-    def find_element(self, locator: Tuple[str, str]) -> WebElement:
+    def find_element(self, by: By, value: str, timeout: int = None):
         """Find element with explicit wait."""
+        timeout = timeout or Config.EXPLICIT_WAIT
         try:
-            self.logger.debug(f"[Demo] Finding element: {locator}")
-            element = self.wait.until(EC.presence_of_element_located(locator))
+            element = WebDriverWait(self.driver, timeout).until(
+                EC.presence_of_element_located((by, value))
+            )
             return element
         except TimeoutException:
-            self.logger.error(f"[Demo] Element not found: {locator}")
-            self.take_screenshot(f"demo_element_not_found_{locator[1]}")
+            logger.error(f"Element not found: {by}={value}")
             raise
     
-    def find_clickable_element(self, locator: Tuple[str, str]) -> WebElement:
+    def find_clickable_element(self, by: By, value: str, timeout: int = None):
         """Find clickable element with explicit wait."""
+        timeout = timeout or Config.EXPLICIT_WAIT
         try:
-            element = self.wait.until(EC.element_to_be_clickable(locator))
+            element = WebDriverWait(self.driver, timeout).until(
+                EC.element_to_be_clickable((by, value))
+            )
             return element
         except TimeoutException:
-            self.logger.error(f"[Demo] Element not clickable: {locator}")
+            logger.error(f"Clickable element not found: {by}={value}")
             raise
     
-    def click(self, locator: Tuple[str, str]) -> None:
-        """Click on element."""
-        element = self.find_clickable_element(locator)
-        self.logger.info(f"[Demo] Clicking element: {locator}")
-        try:
-            element.click()
-        except ElementClickInterceptedException:
-            # If regular click fails, try JavaScript click
-            self.logger.warning(f"[Demo] Regular click failed, trying JavaScript click: {locator}")
-            self.driver.execute_script("arguments[0].click();", element)
-
-    # --- START: Added method to fix the AttributeError ---
-    def click_element(self, locator: Tuple[str, str]) -> None:
-        """
-        Alias for the 'click' method.
-        This is added for compatibility with page objects that call 'click_element'.
-        """
-        self.click(locator)
-    # --- END: Added method ---
+    def find_elements(self, by: By, value: str):
+        """Find multiple elements."""
+        return self.driver.find_elements(by, value)
     
-    def is_element_visible(self, locator: Tuple[str, str], timeout: Optional[int] = None) -> bool:
+    def click_element(self, by: By, value: str, timeout: int = None):
+        """Find and click element."""
+        element = self.find_clickable_element(by, value, timeout)
+        logger.debug(f"Clicking element: {by}={value}")
+        element.click()
+    
+    def enter_text(self, by: By, value: str, text: str, timeout: int = None):
+        """Find element and enter text."""
+        element = self.find_element(by, value, timeout)
+        element.clear()
+        element.send_keys(text)
+        logger.debug(f"Entered text in element: {by}={value}")
+    
+    def is_element_visible(self, by: By, value: str, timeout: int = 5):
         """Check if element is visible."""
         try:
-            wait_time = timeout or Config.DEFAULT_TIMEOUT
-            WebDriverWait(self.driver, wait_time).until(
-                EC.visibility_of_element_located(locator)
+            WebDriverWait(self.driver, timeout).until(
+                EC.visibility_of_element_located((by, value))
             )
             return True
         except TimeoutException:
             return False
     
-    def is_element_displayed(self, locator: Tuple[str, str]) -> bool:
-        """Check if element is displayed (following BrowserStack pattern)."""
-        try:
-            element = self.find_element(locator)
-            return element.is_displayed()
-        except:
-            return False
-    
-    def wait_for_page_load(self) -> None:
-        """Wait for page to load completely."""
-        self.wait.until(
-            lambda driver: driver.execute_script("return document.readyState") == "complete"
+    def wait_for_element_to_disappear(self, by: By, value: str, timeout: int = None):
+        """Wait for element to disappear."""
+        timeout = timeout or Config.EXPLICIT_WAIT
+        WebDriverWait(self.driver, timeout).until(
+            EC.invisibility_of_element_located((by, value))
         )
-        self.logger.debug("[Demo] Page loaded completely")
     
-    def take_screenshot(self, name: str) -> None:
-        """Take screenshot for debugging."""
-        try:
-            from pathlib import Path
-            screenshot_dir = Path("screenshots")
-            screenshot_dir.mkdir(exist_ok=True)
-            
-            filepath = screenshot_dir / f"{name}.png"
-            self.driver.save_screenshot(str(filepath))
-            self.logger.info(f"[Demo] Screenshot saved: {filepath}")
-        except Exception as e:
-            self.logger.error(f"[Demo] Failed to take screenshot: {e}")
+    def get_element_text(self, by: By, value: str, timeout: int = None):
+        """Get text from element."""
+        element = self.find_element(by, value, timeout)
+        return element.text
     
-    def scroll_to_element(self, locator: Tuple[str, str]) -> None:
-        """Scroll to element."""
-        element = self.find_element(locator)
+    def scroll_to_element(self, element):
+        """Scroll element into view."""
         self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
-        self.logger.debug(f"[Demo] Scrolled to element: {locator}")
-
+    
+    def take_screenshot(self, name: str):
+        """Take a screenshot."""
+        screenshot_path = Config.SCREENSHOTS_DIR / f"{name}.png"
+        self.driver.save_screenshot(str(screenshot_path))
+        logger.info(f"Screenshot saved: {screenshot_path}")
+        return screenshot_path

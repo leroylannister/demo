@@ -1,10 +1,10 @@
 # BrowserStack configuration file
-userName: "YOUR_USERNAME"
-accessKey: "YOUR_ACCESS_KEY"
-buildName: "Demo Favorites Test"
-projectName: "Technical Challenge"
+userName: ${BROWSERSTACK_USERNAME}
+accessKey: ${BROWSERSTACK_ACCESS_KEY}
+buildName: Demo Test Suite - Build ${BUILD_NUMBER}
+projectName: Demo Technical Challenge
 
-# Platform configurations - Reduced to the three required environments
+# Platform configurations
 platforms:
   - browserName: Chrome
     browserVersion: latest
@@ -25,10 +25,17 @@ platforms:
 
 # Test configuration
 parallelsPerPlatform: 1
-browserstackLocal: true
+browserstackLocal: false
 debug: true
 consoleLogs: info
 networkLogs: true
 
 # Timeouts
 idleTimeout: 300
+
+# Build identification
+buildIdentifier: ${BUILD_ID}
+
+# Retry configuration
+retryFailedTests: true
+retryCount: 2

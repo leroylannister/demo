@@ -1,5 +1,0 @@
-[Demo] 16:52:00 - Demo.TestDemoFavoritesFlow - INFO - [Demo] Step 1: Logging into BStackDemo
-[Demo] 16:52:00 - Demo.LoginPage - INFO - [Demo] Navigating to: https://www.bstackdemo.com/signin
-[Demo] 16:52:01 - Demo.LoginPage - INFO - [Demo] Navigated to login page
-[Demo] 16:52:02 - Demo.LoginPage - INFO - [Demo] Selecting username: demouser
-[Demo] 16:52:34 - Demo.LoginPage - ERROR - [Demo] Element not clickable: ('xpath', "//div[contains(text(), 'demouser')]")

@@ -1,153 +1,102 @@
-"""Fixed LoginPage using proven React Select interaction patterns."""
+"""Products page object for BStackDemo."""
 
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.keys import Keys
+import logging
 import time
 
-from src.demo.pages.base_page import BasePage
+from .base_page import BasePage
+
+logger = logging.getLogger(__name__)
 
 
-class LoginPage(BasePage):
-    """LoginPage using proven React Select patterns from BrowserStack docs"""
+class ProductsPage(BasePage):
+    """Page object for products listing and filtering."""
     
-    # Locators for elements on the page
-    SIGN_IN_BUTTON = (By.ID, "signin")
-    USERNAME_FIELD = (By.ID, "username")
-    PASSWORD_FIELD = (By.ID, "password")
-    LOGIN_BUTTON = (By.ID, "login-btn")
+    # Locators
+    SAMSUNG_FILTER = (By.XPATH, "//span[text()='Samsung']")
+    APPLE_FILTER = (By.XPATH, "//span[text()='Apple']")
+    GOOGLE_FILTER = (By.XPATH, "//span[text()='Google']")
+    ONEPLUS_FILTER = (By.XPATH, "//span[text()='OnePlus']")
     
-    def __init__(self, driver):
-        super().__init__(driver)
-        
-    def navigate_to_site(self):
-        """Navigate to bstackdemo.com"""
-        self.logger.info("[Demo] Navigating to bstackdemo.com...")
-        self.driver.get("https://bstackdemo.com")
-        
-        try:
-            WebDriverWait(self.driver, 10).until(EC.title_contains('StackDemo'))
-            self.logger.info("[Demo] Page loaded successfully")
-        except TimeoutException:
-            self.logger.warning("[Demo] Page might not have loaded completely")
-        
-    def click_sign_in(self):
-        """Click the Sign In button to open login modal"""
-        try:
-            self.logger.info("[Demo] Looking for Sign In button...")
-            sign_in_btn = WebDriverWait(self.driver, 10).until(
-                EC.visibility_of_element_located(self.SIGN_IN_BUTTON)
-            )
-            sign_in_btn.click()
-            self.logger.info("[Demo] ✓ Clicked Sign In button")
-            
-            try:
-                WebDriverWait(self.driver, 5).until(
-                    EC.visibility_of_element_located(self.USERNAME_FIELD)
-                )
-                self.logger.info("[Demo] ✓ Login modal opened successfully")
-                return True
-            except TimeoutException:
-                self.logger.warning("[Demo] Login modal may not have opened properly")
-                return True 
-                
-        except TimeoutException:
-            self.logger.warning("[Demo] Sign In button not found")
-            return False
+    PRODUCT_TITLE = (By.CLASS_NAME, "shelf-item__title")
+    PRODUCT_CONTAINER = (By.CLASS_NAME, "shelf-item")
     
-    def select_username_and_password(self, username="demouser", password="testingisfun99"):
-        """Select username and password using the working test pattern"""
-        try:
-            self.logger.info("[Demo] Selecting username and password...")
-            
-            # Step 1: Click on username field to open dropdown - using visibility_of_element_located like working test
-            username_field = WebDriverWait(self.driver, 10).until(
-                EC.visibility_of_element_located(self.USERNAME_FIELD)
-            )
-            username_field.click()
-            self.logger.info("[Demo] ✓ Clicked username field")
-            
-            # Step 2: Select demouser option using XPath like the working test
-            username_option = WebDriverWait(self.driver, 10).until(
-                EC.visibility_of_element_located((By.XPATH, "//div[contains(text(), 'demouser')]"))
-            )
-            username_option.click()
-            self.logger.info("[Demo] ✓ Selected username")
-            
-            # Step 3: Click on password field to open dropdown
-            password_field = WebDriverWait(self.driver, 10).until(
-                EC.visibility_of_element_located(self.PASSWORD_FIELD)
-            )
-            password_field.click()
-            self.logger.info("[Demo] ✓ Clicked password field")
-            
-            # Step 4: Select password option using XPath like the working test
-            password_option = WebDriverWait(self.driver, 10).until(
-                EC.visibility_of_element_located((By.XPATH, "//div[contains(text(), 'testingisfun99')]"))
-            )
-            password_option.click()
-            self.logger.info("[Demo] ✓ Selected password")
-            
-            return True
-            
-        except TimeoutException:
-            self.logger.error("[Demo] Failed to select username and password")
-            self.driver.save_screenshot("debug_username_password_selection_failed.png")
-            return False
-        except Exception as e:
-            self.logger.error(f"[Demo] An unexpected error occurred: {e}")
-            self.driver.save_screenshot("debug_username_password_selection_error.png")
-            return False
-
-    def click_login(self):
-        """Click the Login button using the working test pattern"""
-        try:
-            self.logger.info("[Demo] Clicking Login button...")
-            
-            # Use visibility_of_element_located like the working test
-            login_btn = WebDriverWait(self.driver, 10).until(
-                EC.visibility_of_element_located(self.LOGIN_BUTTON)
-            )
-            login_btn.click()
-            
-            self.logger.info("[Demo] ✓ Clicked Login button")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"[Demo] Login button click failed: {e}")
-            self.driver.save_screenshot("debug_login_button_error.png")
-            return False
+    # Galaxy S20+ specific locators
+    GALAXY_S20_CONTAINER = (By.CSS_SELECTOR, "[id='11']")
+    GALAXY_S20_FAVORITE_BTN = (By.CSS_SELECTOR, "[id='11'] button")
     
-    def verify_login_success(self):
-        """Verify that login was successful by checking for logout button"""
-        try:
-            # Use visibility_of_element_located like the working test
-            WebDriverWait(self.driver, 10).until(
-                EC.visibility_of_element_located((By.ID, "logout"))
-            )
-            self.logger.info("[Demo] ✓ Login successful - logout button found")
-            return True
-            
-        except TimeoutException:
-            self.driver.save_screenshot("debug_login_failed.png")
-            current_url = self.driver.current_url
-            self.logger.error(f"[Demo] Login failed. Current URL: {current_url}")
-            return False
-
-    def login(self, username="demouser", password="testingisfun99"):
-        """Complete login flow using working test patterns"""
-        self.logger.info("[Demo] Starting login process...")
+    FAVORITES_LINK = (By.LINK_TEXT, "Favourites")
+    
+    def filter_by_brand(self, brand: str):
+        """Apply brand filter."""
+        logger.info(f"Filtering by brand: {brand}")
         
-        self.navigate_to_site()
-        self.click_sign_in()
-        self.select_username_and_password(username, password)
-        self.click_login()
-        
-        if self.verify_login_success():
-            self.logger.info("[Demo] ✅ Login completed successfully")
+        brand_lower = brand.lower()
+        if brand_lower == "samsung":
+            self.click_element(*self.SAMSUNG_FILTER)
+        elif brand_lower == "apple":
+            self.click_element(*self.APPLE_FILTER)
+        elif brand_lower == "google":
+            self.click_element(*self.GOOGLE_FILTER)
+        elif brand_lower == "oneplus":
+            self.click_element(*self.ONEPLUS_FILTER)
         else:
-            self.logger.warning("[Demo] ⚠️ Login may have failed")
+            raise ValueError(f"Unknown brand: {brand}")
         
-        return True
+        # Wait for products to filter
+        time.sleep(2)
+    
+    def filter_by_samsung(self):
+        """Apply Samsung filter."""
+        self.filter_by_brand("Samsung")
+    
+    def get_all_product_names(self):
+        """Get names of all visible products."""
+        products = self.find_elements(*self.PRODUCT_TITLE)
+        return [p.text for p in products]
+    
+    def is_product_displayed(self, product_name: str):
+        """Check if a specific product is displayed."""
+        product_names = self.get_all_product_names()
+        return product_name in product_names
+    
+    def favorite_product_by_name(self, product_name: str):
+        """Add a product to favorites by its name."""
+        logger.info(f"Adding {product_name} to favorites")
+        
+        # Find all product containers
+        products = self.find_elements(*self.PRODUCT_CONTAINER)
+        
+        for product in products:
+            title_element = product.find_element(By.CLASS_NAME, "shelf-item__title")
+            if title_element.text == product_name:
+                # Find and click the favorite button within this product
+                favorite_btn = product.find_element(By.TAG_NAME, "button")
+                self.scroll_to_element(favorite_btn)
+                favorite_btn.click()
+                logger.info(f"Clicked favorite for {product_name}")
+                return
+        
+        raise Exception(f"Product not found: {product_name}")
+    
+    def favorite_galaxy_s20_plus(self):
+        """Add Galaxy S20+ to favorites using specific selector."""
+        logger.info("Adding Galaxy S20+ to favorites")
+        
+        # Method 1: Try specific ID selector
+        try:
+            self.click_element(*self.GALAXY_S20_FAVORITE_BTN)
+            return
+        except:
+            logger.warning("Failed with ID selector, trying by name")
+        
+        # Method 2: Fallback to name-based selection
+        self.favorite_product_by_name("Galaxy S20+")
+    
+    def navigate_to_favorites(self):
+        """Navigate to favorites page."""
+        logger.info("Navigating to favorites")
+        self.click_element(*self.FAVORITES_LINK)
+        
+        # Wait for navigation
+        time.sleep(1)
